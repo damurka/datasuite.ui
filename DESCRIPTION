@@ -1,0 +1,33 @@
+Package: datasuite.ui
+Title: Shiny Interface, Chart Options and Report Builder for DataSuite Apps
+Version: 0.0.0.9000
+Authors@R: c(
+      person("David", "Kariuki", , "hello@damurka.com", role = c("aut", "cre"),
+             comment = c(ORCID = "0009-0003-6159-1107")),
+      person("African Population and Health Research Center (APHRC)",
+            role = c("cph", "fnd"))
+    )
+Description: The shared interface of DataSuite's Shiny apps: chart options that restyle
+    any 'ggplot2' chart (texts, fonts, colours, axes, legend, show or hide an element),
+    a Word-like report builder writing Word, PowerPoint and PDF files, and the
+    Shiny and React components, page frame and navigation the apps are built from.
+    It holds nothing specific to one app's data: an app gives it its pages, its
+    charts and its data through small interfaces.
+License: AGPL (>= 3)
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2
+Depends:
+    R (>= 4.1)
+Imports:
+    ggplot2 (>= 3.5.1),
+    grDevices,
+    rlang (>= 1.1.0),
+    scales (>= 1.3.0),
+    stats,
+    tibble (>= 3.2.1),
+    utils,
+    cli (>= 3.6.2)
+Suggests:
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
