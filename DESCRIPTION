@@ -20,14 +20,32 @@ RoxygenNote: 7.3.2
 Depends:
     R (>= 4.1)
 Imports:
+    cli (>= 3.6.2),
+    flextable,
     ggplot2 (>= 3.5.1),
+    graphics,
     grDevices,
+    htmltools,
+    officer,
     rlang (>= 1.1.0),
     scales (>= 1.3.0),
     stats,
     tibble (>= 3.2.1),
+    tools,
     utils,
-    cli (>= 3.6.2)
+    xml2
 Suggests:
-    testthat (>= 3.0.0)
+    chromote,
+    countrycode,
+    jsonlite,
+    magick,
+    pdftools,
+    png,
+    ragg,
+    rsvg,
+    rvg,
+    svglite,
+    systemfonts,
+    testthat (>= 3.0.0),
+    zip
 Config/testthat/edition: 3
