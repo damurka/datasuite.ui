@@ -14,9 +14,11 @@
 #   adopt_language  (optional) a reactive: TRUE when a new dataset should take the language on screen rather than
 #              show its own (a fresh upload, as opposed to a resumed file)
 # `start_tab`: the screen shown first and the one a locked page falls back to. `open_tabs`: tabs that never lock.
-# `theme`: a theme name of cd-ui.css (NULL for the default).
+# `theme`: a theme name of cd-ui.css (NULL for the default). `page_header_extra`: what the app adds to every page
+# header's server (see cd_page_header_server()).
 app_frame <- function(app_name, app_version, theme, nav_sections, registry, i18n, language, selected_file = NA,
-                      start_screens = list(), data, start_tab = "upload_data", open_tabs = start_tab) {
+                      start_screens = list(), data, start_tab = "upload_data", open_tabs = start_tab,
+                      page_header_extra = NULL) {
   ui <- cd_app_ui(
     theme = theme,
     title = app_name,
@@ -95,7 +97,7 @@ app_frame <- function(app_name, app_version, theme, nav_sections, registry, i18n
       session$sendCustomMessage("reinit-tooltips", TRUE)
     })
 
-    cd_pages_server(registry, cache, i18n, page_is)
+    cd_pages_server(registry, cache, i18n, page_is, header_extra = page_header_extra)
     observeEvent(input$open_reports, cd_request_report(session))
 
     # The dataset's country in the header (debounced: it can be set several times while a dataset is built)

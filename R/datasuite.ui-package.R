@@ -5,6 +5,7 @@
 #' @importFrom htmltools css
 #' @importFrom stringr str_glue_data
 #' @importFrom purrr map walk
+#' @importFrom openxlsx createWorkbook saveWorkbook
 #' @rawNamespace exportPattern("^[[:alpha:]]")
 "_PACKAGE"
 

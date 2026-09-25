@@ -22,3 +22,37 @@ cd_page_header <- function(id, title, i18n, include_report = FALSE, include_note
 }
 
 # "Denominator  (o Vaccination DHIS2)  (o Maternal DHIS2)  Set on the Denominator Selection page."
+
+# `key`: the page's standard report (one the app registered) and its id in the notes store.
+# `extra`: a function(input, output, session, cache, i18n) run inside the header's module, for what an app adds to
+# every page header (Countdown: its denominator row).
+cd_page_header_server <- function(id, cache, path, section = NULL, i18n, key = id, extra = NULL) {
+  stopifnot(is.reactive(cache))
+
+  moduleServer(
+    id = id,
+    module = function(input, output, session) {
+
+      if (is.function(extra)) extra(input, output, session, cache, i18n)
+
+      # the page's standard report opens in the report builder (modules/reports.R), which asks for its name
+      observeEvent(input$report, cd_request_report(session, key))
+
+      cd_help_button_server(
+        id = 'get_help',
+        path = path,
+        section = section,
+        cache = cache
+      )
+
+      cd_notes_button_server(
+        id = 'add_notes',
+        cache = cache,
+        document_objects = if (!is.null(objects)) objects[[key]] else NULL,
+        page_id = key,
+        page_name = md_title,
+        i18n = i18n
+      )
+    }
+  )
+}

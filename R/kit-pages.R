@@ -48,7 +48,8 @@ cd_pages_ui <- function(pages, i18n) {
 
 # Starts every page's server plus its header (help, report, notes) -- so a module never wires its own header.
 # `page_is(id)`: app.R's reactive "is this page open with data loaded".
-cd_pages_server <- function(pages, cache, i18n, page_is) {
+# `header_extra`: what the app adds to every page header's server (see cd_page_header_server()).
+cd_pages_server <- function(pages, cache, i18n, page_is, header_extra = NULL) {
   for (page in pages) {
     local({
       p <- page
@@ -56,7 +57,7 @@ cd_pages_server <- function(pages, cache, i18n, page_is) {
       do.call(p$server, args)
       moduleServer(p$id, function(input, output, session) {
         cd_page_header_server("page", cache = cache, path = p$help[1], section = if (length(p$help) > 1) p$help[2],
-                              i18n = i18n, key = p$report %||% p$id)
+                              i18n = i18n, key = p$report %||% p$id, extra = header_extra)
       })
     })
   }
