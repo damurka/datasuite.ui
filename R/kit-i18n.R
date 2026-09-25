@@ -87,19 +87,28 @@ cd_label_glue <- function(i18n, template_key, ...) {
 }
 
 # ---- translation files ---------------------------------------------------------------------------------------
-# Translations are layered: _shared/translation/shared.json holds every key the apps have in common, and each app's
-# own translation/translation.json holds only what is specific to it (and may override a shared key). An app --
-# including one on a custom indicator group -- adds its own keys there, or passes more layers in `extra`.
-# cd_translations() merges the layers (later layers win) into one file for shiny.i18n's init_i18n(), which wants a
-# single path:  i18n <- init_i18n(translation_json_path = cd_translations("translation/translation.json"))
+# Translations are layered: datasuite.ui's own words (inst/translation/ui.json), then those of the packages an app is
+# built from (a package registers its file when it loads, e.g. cd2030.core's indicator names and page texts), then the
+# app's own translation/translation.json (which may override any of them), then `extra`. cd_translations() merges the
+# layers (later layers win) into one file for shiny.i18n's init_i18n(), which wants a single path:
+#   i18n <- init_i18n(translation_json_path = cd_translations("translation/translation.json"))
 cd_read_translation_file <- function(path) {
   lines <- readLines(path, warn = FALSE, encoding = "UTF-8")
   lines <- lines[!startsWith(trimws(lines), "//")]   # the app files may carry // comment lines
   jsonlite::fromJSON(paste(lines, collapse = "\n"), simplifyVector = FALSE)
 }
 
-cd_translations <- function(app_file, extra = character()) {
-  files <- c(system.file("translation", "shared.json", package = "datasuite.ui"), app_file, extra)
+# A package's translation file, merged after datasuite.ui's own and before the app's (a package calls this in its
+# .onLoad; registering the same file again does nothing)
+cd_register_translations <- function(path) {
+  files <- get0("translation_files", envir = .cd_state, inherits = FALSE) %||% character()
+  if (!path %in% files) assign("translation_files", c(files, path), envir = .cd_state)
+  invisible(path)
+}
+
+cd_translations <- function(app_file = character(), extra = character()) {
+  registered <- get0("translation_files", envir = .cd_state, inherits = FALSE) %||% character()
+  files <- c(system.file("translation", "ui.json", package = "datasuite.ui"), registered, app_file, extra)
   layers <- lapply(files[file.exists(files)], cd_read_translation_file)
   merged <- list()
   for (layer in layers) for (entry in layer$translation) merged[[entry$key]] <- entry
