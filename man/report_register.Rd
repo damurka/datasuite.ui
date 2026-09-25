@@ -11,7 +11,8 @@ report_register(
   kinds = NULL,
   presets = NULL,
   indicator_name = NULL,
-  fields = NULL
+  fields = NULL,
+  chart_id = NULL
 )
 }
 \arguments{
@@ -31,6 +32,9 @@ for \code{{chart_indicator}}.}
 
 \item{fields}{A list of extra fields for \code{\link[=report_field_catalog]{report_field_catalog()}}, each \code{list(key, group, label)}; their values come
 from the report context's \code{fields()}.}
+
+\item{chart_id}{A function of a chart's data and its ggplot returning the chart's id: the key its options are kept
+under, for the screen and for reports (the same chart gets the same id in both). By default, \code{\link[=cd_chart_type]{cd_chart_type()}}.}
 }
 \value{
 Invisibly, \code{NULL}.

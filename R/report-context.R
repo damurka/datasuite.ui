@@ -25,12 +25,14 @@
 #'   for `{chart_indicator}`.
 #' @param fields A list of extra fields for [report_field_catalog()], each `list(key, group, label)`; their values come
 #'   from the report context's `fields()`.
+#' @param chart_id A function of a chart's data and its ggplot returning the chart's id: the key its options are kept
+#'   under, for the screen and for reports (the same chart gets the same id in both). By default, [cd_chart_type()].
 #' @return Invisibly, `NULL`.
 #' @export
 report_register <- function(themes = NULL, default_theme = NULL, cover = NULL, kinds = NULL, presets = NULL,
-                            indicator_name = NULL, fields = NULL) {
+                            indicator_name = NULL, fields = NULL, chart_id = NULL) {
   given <- list(themes = themes, default_theme = default_theme, cover = cover, kinds = kinds, presets = presets,
-                indicator_name = indicator_name, fields = fields)
+                indicator_name = indicator_name, fields = fields, chart_id = chart_id)
   for (k in names(given)) if (!is.null(given[[k]])) assign(k, given[[k]], envir = .ds_report)
   invisible(NULL)
 }
@@ -42,6 +44,19 @@ report_register <- function(themes = NULL, default_theme = NULL, cover = NULL, k
 .ds_report_kinds <- function() {
   kinds <- .ds_registered("kinds")
   if (is.function(kinds)) tryCatch(kinds(), error = function(e) list()) else list()
+}
+
+# The registered standard reports in `lang` (an empty list when the app gave none)
+.ds_report_presets <- function(lang = "en") {
+  presets <- .ds_registered("presets")
+  if (is.function(presets)) tryCatch(presets(lang), error = function(e) list()) else list()
+}
+
+# A chart's id (the app's registered function; else its type of graph)
+.ds_chart_id <- function(data, plot) {
+  f <- .ds_registered("chart_id")
+  id <- if (is.function(f)) tryCatch(f(data, plot), error = function(e) NULL)
+  id %||% cd_chart_type(plot)
 }
 
 #' One kind of chart or table
