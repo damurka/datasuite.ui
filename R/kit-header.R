@@ -48,9 +48,9 @@ cd_page_header_server <- function(id, cache, path, section = NULL, i18n, key = i
       cd_notes_button_server(
         id = 'add_notes',
         cache = cache,
-        document_objects = if (!is.null(objects)) objects[[key]] else NULL,
+        document_objects = NULL,
         page_id = key,
-        page_name = md_title,
+        page_name = key,
         i18n = i18n
       )
     }

@@ -114,7 +114,8 @@ report_converter <- function() {
 #' written by [export_deck()], as a PowerPoint file or a PDF.
 #'
 #' @param context A report context ([report_context()]), or what [as_report_context()] turns into one.
-#' @param project The report: `list(name, design, cover, blocks)` (see [report_presets()]), or a slide deck.
+#' @param project The report: `list(name, design, cover, blocks)` (such as the app's standard reports, see
+#'   [report_register()]), or a slide deck.
 #' @param file The file to write.
 #' @param format `"docx"` or `"pdf"` for a document; `"pptx"` or `"pdf"` for a slide deck (by default `"docx"` for a
 #'   document, `"pptx"` for a deck).

@@ -28,6 +28,14 @@ cd_page_body(
 \item{...}{Page content, passed to cd_page_content()}
 
 \item{filters}{Optional cd_filter_bar(...) with the page's filter inputs}
+
+\item{include_report, include_notes, include_help}{Show the header's report, notes and help buttons.}
+
+\item{eyebrow}{The small label above the title (a translation key).}
+
+\item{subtitle}{The line under the title (a translation key).}
+
+\item{include_denominator}{Show the row the app's page header server fills (Countdown: the denominators).}
 }
 \description{
 The page assembled from its parts. Modules do not call this directly; they call cd_page_ui(), which

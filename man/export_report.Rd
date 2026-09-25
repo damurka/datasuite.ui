@@ -18,7 +18,8 @@ export_report(
 \arguments{
 \item{context}{A report context (\code{\link[=report_context]{report_context()}}), or what \code{\link[=as_report_context]{as_report_context()}} turns into one.}
 
-\item{project}{The report: \code{list(name, design, cover, blocks)} (see \code{\link[=report_presets]{report_presets()}}), or a slide deck.}
+\item{project}{The report: \code{list(name, design, cover, blocks)} (such as the app's standard reports, see
+\code{\link[=report_register]{report_register()}}), or a slide deck.}
 
 \item{file}{The file to write.}
 

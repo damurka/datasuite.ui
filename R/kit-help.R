@@ -25,7 +25,7 @@ cd_help_button_server <- function(id, path, section = NULL, cache) {
         if (!is.null(section)) {
           url <- paste0(url, '#', section)
         }
-        browseURL(url)
+        utils::browseURL(url)
       })
     }
   )

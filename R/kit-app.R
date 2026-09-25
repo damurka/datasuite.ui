@@ -3,9 +3,9 @@
 #
 #   app_frame(app_name, app_version, theme, nav_sections, registry, i18n, language, selected_file,
 #             start_screens = list(cd_screen(tabName = "welcome", welcome_ui("welcome"))),
-#             data = function(input, output, session) list(dataset = <reactive>, ready = <reactive>, ...))
+#             data_server = function(input, output, session) list(dataset = <reactive>, ready = <reactive>, ...))
 #
-# `data` is called once per session and gives back:
+# `data_server` is called once per session and gives back:
 #   dataset    a reactive: the loaded dataset (NULL before one is loaded). It is the object every page receives; it
 #              keeps the language (`language`, `set_language()`), the country shown in the header (`country`) and,
 #              for the kit's tools, notes, chart options and reports (see the README's "dataset contract").
@@ -17,7 +17,7 @@
 # `theme`: a theme name of cd-ui.css (NULL for the default). `page_header_extra`: what the app adds to every page
 # header's server (see cd_page_header_server()).
 app_frame <- function(app_name, app_version, theme, nav_sections, registry, i18n, language, selected_file = NA,
-                      start_screens = list(), data, start_tab = "upload_data", open_tabs = start_tab,
+                      start_screens = list(), data_server, start_tab = "upload_data", open_tabs = start_tab,
                       page_header_extra = NULL) {
   ui <- cd_app_ui(
     theme = theme,
@@ -41,7 +41,7 @@ app_frame <- function(app_name, app_version, theme, nav_sections, registry, i18n
       active_language(lang)
     }
 
-    loaded <- data(input, output, session)
+    loaded <- data_server(input, output, session)
     cache <- loaded$dataset
     # Charts keep what the user changed about their look in the dataset (cd_plot_server() reads this).
     session$userData$cd_cache <- cache

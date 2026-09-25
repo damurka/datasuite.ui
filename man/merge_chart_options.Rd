@@ -17,6 +17,7 @@ Later arguments win, field by field; \code{legend_labels}, \code{category_labels
 layer a dataset's defaults, a chart's saved options and what the caller passes now.
 }
 \examples{
-merge_chart_options(cd_chart_options(font_family = "serif", title = "A"), cd_chart_options(title = "B"))
+merge_chart_options(cd_chart_options(font_family = "serif", title = "A"),
+                    cd_chart_options(title = "B"))
 
 }

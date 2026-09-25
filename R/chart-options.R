@@ -104,7 +104,8 @@
 #' @examples
 #' cd_chart_options(title = "Coverage", legend_position = "bottom", text_scale = 1.2)
 #' cd_chart_options(x_axis = "Year", legend_labels = c(dhis2 = "Routine data"))
-#' cd_chart_options(x_text_angle = 45, grid = "horizontal", grid_color = "grey90", y_labels = "percent_points")
+#' cd_chart_options(x_text_angle = 45, grid = "horizontal", grid_color = "grey90",
+#'                  y_labels = "percent_points")
 #'
 #' @seealso [apply_chart_options()], [merge_chart_options()]
 #' @export
@@ -255,7 +256,8 @@ as_chart_options <- function(x) {
 #' @return A `cd_chart_options` object.
 #'
 #' @examples
-#' merge_chart_options(cd_chart_options(font_family = "serif", title = "A"), cd_chart_options(title = "B"))
+#' merge_chart_options(cd_chart_options(font_family = "serif", title = "A"),
+#'                     cd_chart_options(title = "B"))
 #'
 #' @export
 merge_chart_options <- function(...) {

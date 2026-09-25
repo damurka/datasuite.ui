@@ -12,6 +12,10 @@
 #' @param i18n Translator object
 #' @param filters Optional cd_filter_bar(...) with the page's filter inputs
 #' @param ... Page content, passed to cd_page_content()
+#' @param include_report,include_notes,include_help Show the header's report, notes and help buttons.
+#' @param eyebrow The small label above the title (a translation key).
+#' @param subtitle The line under the title (a translation key).
+#' @param include_denominator Show the row the app's page header server fills (Countdown: the denominators).
 cd_page_body <- function(dashboardId, dashboardTitle, i18n, ..., filters = NULL, include_report = FALSE,
                          include_notes = FALSE, include_help = TRUE, eyebrow = NULL, subtitle = NULL,
                          include_denominator = FALSE) {

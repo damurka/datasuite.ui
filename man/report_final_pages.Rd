@@ -9,7 +9,8 @@ report_final_pages(context, project, i18n = NULL, dpi = 60, progress = NULL)
 \arguments{
 \item{context}{A report context (\code{\link[=report_context]{report_context()}}), or what \code{\link[=as_report_context]{as_report_context()}} turns into one.}
 
-\item{project}{The report: \code{list(name, design, cover, blocks)} (see \code{\link[=report_presets]{report_presets()}}), or a slide deck.}
+\item{project}{The report: \code{list(name, design, cover, blocks)} (such as the app's standard reports, see
+\code{\link[=report_register]{report_register()}}), or a slide deck.}
 
 \item{i18n}{An object with a \code{t(key)} method, or \code{NULL}.}
 
