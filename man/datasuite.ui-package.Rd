@@ -8,6 +8,14 @@
 \description{
 The shared interface of DataSuite's Shiny apps: chart options that restyle any 'ggplot2' chart (texts, fonts, colours, axes, legend, show or hide an element), a Word-like report builder writing Word, PowerPoint and PDF files, and the Shiny and React components, page frame and navigation the apps are built from. It holds nothing specific to one app's data: an app gives it its pages, its charts and its data through small interfaces.
 }
+\seealso{
+Useful links:
+\itemize{
+  \item \url{https://github.com/damurka/datasuite.ui}
+  \item Report bugs at \url{https://github.com/damurka/datasuite.ui/issues}
+}
+
+}
 \author{
 \strong{Maintainer}: David Kariuki \email{hello@damurka.com} (\href{https://orcid.org/0009-0003-6159-1107}{ORCID})
 

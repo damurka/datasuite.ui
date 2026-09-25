@@ -28,14 +28,15 @@
 #' for charts, tables and headings. Only those installed where the charts are drawn are given (all of them when that
 #' cannot be told).
 #' @param group `"all"`, `"serif"` or `"sans"`.
+#' @param installed `FALSE` for every font a report may name, installed here or not.
 #' @return A character vector.
 #' @export
-report_fonts <- function(group = c("all", "serif", "sans")) {
+report_fonts <- function(group = c("all", "serif", "sans"), installed = TRUE) {
   group <- match.arg(group)
   serif <- c("Cambria", "Georgia", "Garamond", "Palatino Linotype", "Book Antiqua", "Constantia", "Times New Roman")
   sans <- c("Calibri", "Arial", "Aptos", "Corbel", "Candara", "Franklin Gothic Book", "Gill Sans MT")
   fonts <- switch(group, serif = serif, sans = sans, c(serif, sans))
-  have <- if (requireNamespace("systemfonts", quietly = TRUE)) {
+  have <- if (installed && requireNamespace("systemfonts", quietly = TRUE)) {
     tryCatch(unique(systemfonts::system_fonts()$family), error = function(e) character())
   } else {
     character()

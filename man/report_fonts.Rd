@@ -4,10 +4,12 @@
 \alias{report_fonts}
 \title{The fonts a report can use}
 \usage{
-report_fonts(group = c("all", "serif", "sans"))
+report_fonts(group = c("all", "serif", "sans"), installed = TRUE)
 }
 \arguments{
 \item{group}{\code{"all"}, \code{"serif"} or \code{"sans"}.}
+
+\item{installed}{\code{FALSE} for every font a report may name, installed here or not.}
 }
 \value{
 A character vector.

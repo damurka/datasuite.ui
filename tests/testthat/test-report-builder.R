@@ -42,7 +42,7 @@ test_that("themes are complete designs and saved designs are filled in", {
   fields <- names(report_default_design())
   for (th in report_themes()) {
     expect_true(all(setdiff(fields, "name") %in% names(th)), info = th$theme)
-    expect_true(all(c(th$heading_font, th$body_font) %in% report_fonts()), info = th$theme)
+    expect_true(all(c(th$heading_font, th$body_font) %in% report_fonts(installed = FALSE)), info = th$theme)
   }
   old <- .rb_design(list(accent = "#123456", font = "sans"))
   expect_identical(old$heading_font, "Calibri")
