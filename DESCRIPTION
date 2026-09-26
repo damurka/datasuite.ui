@@ -1,6 +1,6 @@
 Package: datasuite.ui
 Title: Shiny Interface, Chart Options and Report Builder for DataSuite Apps
-Version: 0.2.0
+Version: 0.3.0
 Authors@R: c(
       person("David", "Kariuki", , "hello@damurka.com", role = c("aut", "cre"),
              comment = c(ORCID = "0009-0003-6159-1107")),

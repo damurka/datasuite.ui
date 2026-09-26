@@ -1,3 +1,13 @@
+# datasuite.ui 0.3.0
+
+* The "Ask AI" buttons work: the header's and each chart card's open DataSuite's chat with a prompt about the page or
+  that card, ready to edit (the card becomes `askedAbout` in the bridge state, so "this" means it). Outside DataSuite
+  they are disabled, with a hint.
+* `ai_action()` levels: `read`, `view` (changes only what is shown), `add` (adds something removable) and `replace`
+  (overwrites or deletes), with optional `classify(args, session)` for a level that depends on the call and
+  `summary(args, session)` for a readable description. The built-in `describeAction` returns both, so DataSuite
+  asks the user only before a replacement, in the chat. `kind` stays `read`/`change` for older DataSuite builds.
+
 # datasuite.ui 0.2.0
 
 * The AI bridge, protocol 2 (`docs/AI-BRIDGE.md`): every app built with `app_frame()` tells DataSuite's chat where

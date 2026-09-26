@@ -6,7 +6,7 @@
 #' @name interface-kit
 #' @keywords internal
 #' @aliases app_frame as_report_context.default as_report_context.NULL as_report_context.report_context cd_add_sheet cd_app_bar
-#' @aliases cd_app_body cd_app_ui cd_apply_chart_options cd_ask_ai_button cd_button cd_card
+#' @aliases cd_app_body cd_app_ui cd_apply_chart_options cd_ask_ai_button cd_button cd_card cd_help_language cd_help_url
 #' @aliases cd_card_header cd_card_row cd_chart_axes cd_chart_card cd_chart_customize cd_chart_entries
 #' @aliases cd_chart_label_defaults cd_chart_layout cd_chart_schema cd_chart_toolbar cd_checkbox cd_chip_multi
 #' @aliases cd_chip_number cd_chip_select cd_chip_texts cd_collapse_chevron cd_dialog cd_dialog_close_button

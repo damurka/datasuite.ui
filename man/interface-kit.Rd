@@ -14,6 +14,8 @@
 \alias{cd_ask_ai_button}
 \alias{cd_button}
 \alias{cd_card}
+\alias{cd_help_language}
+\alias{cd_help_url}
 \alias{cd_card_header}
 \alias{cd_card_row}
 \alias{cd_chart_axes}
