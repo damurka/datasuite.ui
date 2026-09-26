@@ -1,3 +1,11 @@
+# datasuite.ui 0.1.1
+
+* fontawesome and jquerylib, which the kit uses on every page, are now imported rather than suggested, so they
+  install with the package. shinyjs and shinycssloaders are no longer suggested: the kit replaced both with its own
+  code.
+* `report_fonts()` gains `installed = TRUE`; `installed = FALSE` gives every font a report may name, installed on
+  this computer or not.
+
 # datasuite.ui 0.1.0
 
 First release: the shared interface of DataSuite's Shiny apps, taken out of cd2030.core and the Countdown apps.
