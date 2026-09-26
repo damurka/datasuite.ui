@@ -258,6 +258,7 @@ with cd2030.core installed) and click through the pages you touched.
 | this file | what the package is, how an app uses it, how to develop and release it |
 | [`docs/README.md`](docs/README.md) | how an app is put together on top of it: anatomy, page registry, themes, translations, the Countdown layer |
 | [`docs/COMPONENTS.md`](docs/COMPONENTS.md) | every component: arguments, an example, a screenshot; the report builder in detail |
+| [`docs/AI-BRIDGE.md`](docs/AI-BRIDGE.md) | how DataSuite's chat reads where the user is and asks the app for things (`window.datasuite`, `ai_action()`) |
 | [`docs/HOWTO.md`](docs/HOWTO.md) | recipes (a page, a chart, a component, a translation key, a new app) and the gotchas we hit |
 | [`docs/CONVENTIONS.md`](docs/CONVENTIONS.md) | naming rules and the history of the renames |
 | [`docs/gallery/app.R`](docs/gallery/app.R) | a live page with every component |

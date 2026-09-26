@@ -10,6 +10,7 @@ are the working examples.
 | this file | an app's anatomy, the page registry, a page module, the Countdown layer, themes, translations |
 | [`COMPONENTS.md`](COMPONENTS.md) | reference: every component, its arguments, an example, related pieces and a screenshot (images in `img/`) |
 | [`gallery`](gallery/app.R) | a live page showing every component: `shiny::runApp("docs/gallery")` from the package folder (`GALLERY_THEME=vaccine\|pooled` for the other themes) |
+| [`AI-BRIDGE.md`](AI-BRIDGE.md) | the AI bridge: the state DataSuite's chat reads, the actions it can ask for, how an app adds its own |
 | [`HOWTO.md`](HOWTO.md) | recipes (add a page, a chart, an app, a component, a translation key) and the gotchas we hit |
 | [`CONVENTIONS.md`](CONVENTIONS.md) | naming rules (snake_case, `cd_` prefix, `<stem>_ui/_server` pairs) |
 

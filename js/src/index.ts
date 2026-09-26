@@ -2,6 +2,7 @@ import "./lang";
 import "./spinner";
 import "./tabswitch";
 import "./dialog";
+import "./aibridge";
 import ChartCustomize from "./components/ChartCustomize";
 import ReportStudio from "./components/ReportStudio";
 import ChipMulti from "./components/ChipMulti";

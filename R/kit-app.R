@@ -16,9 +16,11 @@
 # `start_tab`: the screen shown first and the one a locked page falls back to. `open_tabs`: tabs that never lock.
 # `theme`: a theme name of cd-ui.css (NULL for the default). `page_header_extra`: what the app adds to every page
 # header's server (see cd_page_header_server()).
+# `ai_state`, `ai_actions`: what the app adds to the AI bridge (docs/AI-BRIDGE.md): `ai_state(session)` returns a named
+# list merged into the state DataSuite's chat reads (e.g. filters, dataset), `ai_actions` a list of ai_action().
 app_frame <- function(app_name, app_version, theme, nav_sections, registry, i18n, language, selected_file = NA,
                       start_screens = list(), data_server, start_tab = "upload_data", open_tabs = start_tab,
-                      page_header_extra = NULL) {
+                      page_header_extra = NULL, ai_state = NULL, ai_actions = list()) {
   ui <- cd_app_ui(
     theme = theme,
     title = app_name,
@@ -98,6 +100,11 @@ app_frame <- function(app_name, app_version, theme, nav_sections, registry, i18n
     })
 
     cd_pages_server(registry, cache, i18n, page_is, header_extra = page_header_extra)
+
+    # DataSuite's chat: where the user is, and requests from the AI (after the pages, so every chart is registered)
+    .ai_bridge_server(input, session, app = list(name = app_name, version = as.character(app_version)),
+                      nav_sections = nav_sections, language = active_language, data_ready = data_ready,
+                      analysis_ready = analysis_ready, open_tabs = open_tabs, ai_state = ai_state, ai_actions = ai_actions)
     observeEvent(input$open_reports, cd_request_report(session))
 
     # The dataset's country in the header (debounced: it can be set several times while a dataset is built)

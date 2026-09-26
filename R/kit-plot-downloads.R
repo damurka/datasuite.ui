@@ -43,7 +43,9 @@ cd_plot_server <- function(
   excel_write_fun = NULL, # function(wb, data) writes workbook
   # or, for the data on one sheet, the translation keys of its sheet name and (optional) title -- see cd_sheet_writer()
   excel_sheet = NULL,
-  excel_title = NULL
+  excel_title = NULL,
+  # what this chart is, for the app's AI (a list, or a function / reactive returning one; see ai_register_component())
+  about = NULL
 ) {
   if (is.null(excel_write_fun) && !is.null(excel_sheet)) excel_write_fun <- cd_sheet_writer(i18n, excel_sheet, excel_title)
   moduleServer(
@@ -58,6 +60,10 @@ cd_plot_server <- function(
       chart_key <- reactive({
         tryCatch(.ds_chart_id(plot_data(), plot_obj()), error = function(e) NULL)
       })
+      # The AI bridge finds this chart by its id, with the data its download writes and what the app says it is
+      # (R/kit-ai-bridge.R). Nothing is computed until the AI asks for the data.
+      ai_register_component(session, output_id = session$ns("plot"), type = "chart", data = function() plot_data(),
+                            about = about, id = chart_id)
       report_id <- reactive(if (is.null(chart_key())) NULL else paste0("report/", chart_key()))
       chart_cache <- session$userData$cd_cache
       current_cache <- function() if (is.null(chart_cache)) NULL else tryCatch(isolate(chart_cache()), error = function(e) NULL)
