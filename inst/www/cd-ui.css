@@ -1521,6 +1521,9 @@ body.header-compact .cd-card {
   cursor: pointer;
 }
 .cd-card__askai:hover { background: var(--cd-primary-tint); }
+/* Outside DataSuite (no chat to open): shown, not usable -- the hint says why */
+.cd-card__askai:disabled, .cd-hdr-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.cd-card__askai:disabled:hover, .cd-hdr-btn--accent:disabled:hover { background: var(--cd-surface); }
 /* Narrow-card collapse -- project/ReportingRate.dc.html's half-width "National reporting rate" card: only the
    download-image button and a collapse chevron stay in the header; Ask AI, the divider, view/label options, the
    data download and expand fold away (cd_chart_toolbar()/plotDownloadsToolbarContent() tag them

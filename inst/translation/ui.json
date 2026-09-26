@@ -499,10 +499,28 @@
       "pt": "regiões na vertical"
     },
     {
-      "key": "lbl_ask_ai_soon",
-      "en": "Ask AI — coming soon",
-      "fr": "Demander à l'IA — bientôt disponible",
-      "pt": "Perguntar à IA — em breve"
+      "key": "lbl_ask_ai_hint",
+      "en": "Ask DataSuite's AI about this",
+      "fr": "Interroger l'IA de DataSuite à ce sujet",
+      "pt": "Perguntar à IA do DataSuite sobre isto"
+    },
+    {
+      "key": "lbl_ask_ai_unavailable",
+      "en": "Available when the app runs in DataSuite",
+      "fr": "Disponible lorsque l'application s'exécute dans DataSuite",
+      "pt": "Disponível quando a aplicação é executada no DataSuite"
+    },
+    {
+      "key": "lbl_ask_ai_prompt_card",
+      "en": "Explain \"{title}\": ",
+      "fr": "Explique « {title} » : ",
+      "pt": "Explique \"{title}\": "
+    },
+    {
+      "key": "lbl_ask_ai_prompt_page",
+      "en": "Explain the page \"{page}\": ",
+      "fr": "Explique la page « {page} » : ",
+      "pt": "Explique a página \"{page}\": "
     },
     {
       "key": "btn_global_ask_ai",

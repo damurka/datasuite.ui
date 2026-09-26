@@ -81,8 +81,10 @@ cd_shell_server <- function(output, sections, initial_tab, data_ready, analysis_
 
   output$cd_header_actions <- renderUI({
     cd_react_element("HeaderActions", shiny.react::asProps(
-      askAiLabel = "Ask AI",
-      askAiHint = cd_text(i18n, "lbl_ask_ai_soon"),
+      askAiLabel = cd_text(i18n, "btn_global_ask_ai"),
+      # Ask AI opens DataSuite's chat, so it only works there; elsewhere it shows, disabled, saying so
+      askAiHint = cd_text(i18n, if (.cd_in_datasuite()) "lbl_ask_ai_hint" else "lbl_ask_ai_unavailable"),
+      askAiEnabled = .cd_in_datasuite(),
       # flag: a Unicode regional-indicator flag emoji, not an image/icon font -- renders everywhere text does,
       # no asset or icon-set dependency, and is the fastest visual cue for "which language is this" (HeaderBar.tsx).
       languages = list(

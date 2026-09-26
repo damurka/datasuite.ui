@@ -1,9 +1,27 @@
 test_that("ai_action checks its arguments", {
   a <- ai_action("x", function(args, session) 1, kind = "change", description = "d", args = list(v = "a value"))
   expect_s3_class(a, "ai_action")
-  expect_identical(a$kind, "change")
+  expect_identical(a$kind, "replace") # "change" is the old name, and the safest level
+  expect_identical(ai_action("x", function(args, session) 1, kind = "add")$kind, "add")
   expect_error(ai_action("x", "not a function"))
   expect_error(ai_action("x", function(args, session) 1, kind = "delete"))
+  expect_error(ai_action("x", function(args, session) 1, kind = "add", classify = "add"))
+})
+
+test_that("a call's level comes from classify(), defaulting to the kind, and never throws", {
+  save <- ai_action("save", function(args, session) 1, kind = "add",
+                    classify = function(args, session) if (isTRUE(args$id %in% "a")) "replace" else "add",
+                    summary = function(args, session) sprintf("Save %s", args$id))
+  expect_identical(.ai_describe(save, list(id = "b")), list(action = "save", level = "add", summary = "Save b"))
+  expect_identical(.ai_describe(save, list(id = "a"))$level, "replace")
+  odd <- ai_action("odd", function(args, session) 1, kind = "view", classify = function(args, session) "something")
+  expect_identical(.ai_describe(odd, list())$level, "replace")
+  broken <- ai_action("broken", function(args, session) 1, kind = "add", classify = function(args, session) stop("no"),
+                      summary = function(args, session) stop("no"))
+  expect_identical(.ai_describe(broken, list()), list(action = "broken", level = "replace"))
+  plain <- ai_action("plain", function(args, session) 1, kind = "view")
+  expect_identical(.ai_describe(plain, list()), list(action = "plain", level = "view"))
+  expect_identical(.ai_describe(ai_action("look", function(args, session) 1), list())$level, "read")
 })
 
 test_that("dispatch runs the action, and never throws", {
@@ -66,8 +84,9 @@ test_that("pages come from the nav tree, in the language asked for", {
 })
 
 test_that("the state has the kit's fields, the app's additions and the actions (protocol 2)", {
-  actions <- list(ai_action("navigate", function(args, session) NULL, "change", "Opens a page", list(page = "a page id")),
-                  ai_action("getState", function(args, session) NULL, "read", "The state"))
+  actions <- list(ai_action("navigate", function(args, session) NULL, "view", "Opens a page", list(page = "a page id")),
+                  ai_action("getState", function(args, session) NULL, "read", "The state"),
+                  ai_action("save", function(args, session) NULL, "add", classify = function(args, session) "add"))
   state <- .ai_build_state(
     app = list(name = "RMNCAH", version = "2.0.1"),
     page = list(id = "coverage", title = "Coverage", section = "Analysis"),
@@ -83,7 +102,11 @@ test_that("the state has the kit's fields, the app's additions and the actions (
   expect_identical(state$components[[1]]$about$kind, "coverage")
   expect_identical(state$filters$years, c(2020, 2023))
   expect_identical(state$updatedAt, "2026-09-26T10:00:00Z")
-  expect_identical(vapply(state$actions, `[[`, "", "kind"), c("change", "read"))
+  # kind is what DataSuite versions before the levels read (they ask before any change); level is the declared level
+  expect_identical(vapply(state$actions, `[[`, "", "kind"), c("change", "read", "change"))
+  expect_identical(vapply(state$actions, `[[`, "", "level"), c("view", "read", "add"))
+  expect_null(state$actions[[1]]$classified)
+  expect_true(state$actions[[3]]$classified)
   json <- as.character(shiny:::toJSON(state))
   expect_match(json, '"args":\\{"page":"a page id"\\}')
   expect_match(json, '"args":\\{\\}')
@@ -103,4 +126,28 @@ test_that("components register without computing anything, and give their about"
   expect_identical(comps[[2]]$type, "table")
   expect_false(computed)
   expect_error(ai_register_component(session, "x", "picture", data))
+})
+
+test_that("Ask AI prompts name the card, else the page, and fall back to English", {
+  expect_equal(.ai_ask_prompt(list(scope = "card", title = "Reporting rate"), "Data quality", "en"),
+               "Explain \"Reporting rate\": ")
+  expect_equal(.ai_ask_prompt(list(scope = "page"), "Data quality", "en"), "Explain the page \"Data quality\": ")
+  # a card without a title asks about the page; a title with regex characters is kept as it is
+  expect_equal(.ai_ask_prompt(list(scope = "card", title = ""), "Data quality", "en"), "Explain the page \"Data quality\": ")
+  expect_equal(.ai_ask_prompt(list(scope = "card", title = "ANC4 (\\1) $x"), "", "en"), "Explain \"ANC4 (\\1) $x\": ")
+  expect_equal(.ai_ask_prompt(list(scope = "page"), NULL, "en"), "")
+})
+
+test_that("requests to DataSuite are one line on stderr, and only inside DataSuite", {
+  old <- Sys.getenv("CDSUITE_SHINY_ID", unset = NA)
+  on.exit(if (is.na(old)) Sys.unsetenv("CDSUITE_SHINY_ID") else Sys.setenv(CDSUITE_SHINY_ID = old), add = TRUE)
+  Sys.setenv(CDSUITE_SHINY_ID = "")
+  expect_silent(expect_false(.ai_host_request("openChat", query = "x")))
+  Sys.setenv(CDSUITE_SHINY_ID = "rmncah")
+  msg <- tryCatch(.ai_host_request("openChat", query = "Explain \"A\nB\": "), message = function(m) conditionMessage(m))
+  expect_match(msg, "^DATASUITE_HOST_REQUEST \\{")
+  expect_false(grepl("\n.", msg))
+  body <- jsonlite::fromJSON(sub("^DATASUITE_HOST_REQUEST ", "", trimws(msg)))
+  expect_equal(body$action, "openChat")
+  expect_equal(body$query, "Explain \"A\nB\": ")
 })

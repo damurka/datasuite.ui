@@ -7,6 +7,10 @@
 //
 // getState, listComponents, focusComponent and selectTab are answered here (they are about the page); every other
 // action goes to R. request() never rejects: every failure is a reply { ok: false, error } a person can read.
+//
+// The "Ask AI" buttons go the other way: askAi() tells R what the user asked about ("datasuite_ask_ai"); R writes
+// the prompt and asks DataSuite to open its chat with it (R/kit-ai-bridge.R). What was asked about also goes in the
+// state (askedAbout), so the chat knows which chart "this" is.
 
 type Reply = { ok: true; result: unknown } | { ok: false; error: string };
 
@@ -68,6 +72,16 @@ declare global {
 }
 
 let rState: RState | null = null;
+
+// What the user last pressed an Ask AI button for.
+interface AskedAbout {
+  scope: "page" | "card";
+  cardId?: string;
+  componentId?: string;
+  title?: string;
+  at: string;
+}
+let askedAbout: AskedAbout | null = null;
 const pending = new Map<string, Pending>();
 let counter = 0;
 
@@ -271,6 +285,7 @@ function measure(): Measured | null {
   };
   state.cards = cards;
   state.components = measuredComponents;
+  if (askedAbout) state.askedAbout = askedAbout;
   // keep the documented key order: the page-side fields after page
   const ordered: Record<string, unknown> = {};
   for (const k of ["protocol", "app", "page", "viewport", "cards", "components"]) if (k in state) ordered[k] = state[k];
@@ -334,6 +349,43 @@ function selectTab(args: Record<string, unknown>): Promise<Reply> {
     check();
   });
 }
+
+// ---- Ask AI ------------------------------------------------------------------------------------------------------
+
+// The user pressed an Ask AI button: `from` is the button (a card's asks about that card and the component it shows),
+// or nothing for the whole page. R turns it into a prompt and asks DataSuite to open the chat with it.
+export function askAi(from?: Element | null): void {
+  const shiny = window.Shiny as { setInputValue?: (name: string, value: unknown, opts?: unknown) => void } | undefined;
+  if (!shiny || typeof shiny.setInputValue !== "function") return;
+  const at = new Date().toISOString();
+  let about: AskedAbout = { scope: "page", at };
+  const cardEl = (from?.closest(".cd-card") as HTMLElement | null) ?? null;
+  if (cardEl) {
+    let m: Measured | null = null;
+    try {
+      m = measure(); // also labels each card with data-card-id
+    } catch {
+      m = null;
+    }
+    const cardId = cardEl.getAttribute("data-card-id") ?? undefined;
+    const card = cardId ? (m?.state.cards as Card[] | undefined)?.find((c) => c.id === cardId) : undefined;
+    const components = ((m?.state.components as Component[] | undefined) ?? []).filter((c) => c.cardId === cardId);
+    const shown = card?.tabs.find((t) => t.key === card.activeTab)?.componentId;
+    const component = components.find((c) => c.id === shown) ?? components.find((c) => !c.tabKey || c.tabKey === card?.activeTab) ?? components[0];
+    about = { scope: "card", at, title: component?.title || card?.title || textOf(cardEl.querySelector(".cd-card__title")) };
+    if (cardId) about.cardId = cardId;
+    if (component) about.componentId = component.id;
+  }
+  askedAbout = about;
+  shiny.setInputValue("datasuite_ask_ai", about, { priority: "event" });
+}
+
+// A card's Ask AI button (cd_ask_ai_button()) is plain markup: one listener for them all, wherever they are drawn.
+document.addEventListener("click", (event) => {
+  const target = event.target as Element | null;
+  const button = target && typeof target.closest === "function" ? (target.closest(".cd-card__askai") as HTMLButtonElement | null) : null;
+  if (button && !button.disabled) askAi(button);
+});
 
 function toR(action: string, args: Record<string, unknown>, timeoutMs: number): Promise<Reply> {
   return new Promise<Reply>((resolve) => {

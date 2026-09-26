@@ -23,13 +23,16 @@ cd_button <- function(inputId, label = NULL, i18n = cd_i18n(), icon = NULL, vari
   )))
 }
 
-# The per-card "Ask AI" trigger (project/ReportingRate.dc.html's own card-header toolbar) -- a stub, same
-# "coming soon" state HeaderActions.tsx's own global Ask AI button already is (that one hardcodes its label
-# untranslated; this one doesn't repeat that gap). No React component of its own: a plain, static button needs
-# no client-side state to manage.
+# The per-card "Ask AI" trigger (project/ReportingRate.dc.html's own card-header toolbar): opens DataSuite's chat
+# with a prompt about this card and the chart or table it shows (aibridge.ts listens for clicks on .cd-card__askai;
+# R writes the prompt, see .ai_ask_prompt()). Outside DataSuite there is no chat to open: the button shows, disabled,
+# saying so. No React component of its own: a plain, static button needs no client-side state to manage.
 cd_ask_ai_button <- function(i18n = cd_i18n()) {
+  in_datasuite <- .cd_in_datasuite()
   tags$button(
-    type = "button", class = "cd-card__askai", title = i18n$t("lbl_ask_ai_soon"),
+    type = "button", class = "cd-card__askai",
+    title = i18n$t(if (in_datasuite) "lbl_ask_ai_hint" else "lbl_ask_ai_unavailable"),
+    disabled = if (!in_datasuite) NA,
     tagList(
       tags$svg(
         width = "16", height = "16", viewBox = "0 0 24 24", fill = "none", stroke = "currentColor",

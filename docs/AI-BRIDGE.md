@@ -20,6 +20,9 @@ Chat ("what does this chart show?")
 The page can't start a conversation with DataSuite (it is sandboxed); DataSuite reads `window.datasuite.getState()`
 when it needs to (e.g. when the user sends a chat message), so "which page am I on?" is answered without a tool call.
 
+The app's R session can ask DataSuite for something, though: it writes one line to its output, which DataSuite reads
+(see [Requests to DataSuite](#requests-to-datasuite)). The "Ask AI" buttons use it to open the chat.
+
 ## Protocol version 2
 
 ### In the page: `window.datasuite`
@@ -52,7 +55,8 @@ the user scrolled or switched a tab a moment ago.
                     "about": { "kind": "coverage", "options": { "indicator": "anc4", "admin_level": "national" } } } ],
   "filters": { "admin_level": "national", "years": [2019, 2023], "indicator": "anc4" },
   "dataset": { "path": "C:/data/kenya.rds", "country": "Kenya", "revision": 42 },
-  "actions": [ { "name": "navigate", "kind": "change", "description": "Opens a page.", "args": { "page": "a page id from listPages" } } ],
+  "actions": [ { "name": "navigate", "kind": "change", "level": "view", "description": "Opens a page.", "args": { "page": "a page id from listPages" } },
+               { "name": "saveReport", "kind": "change", "level": "add", "classified": true, "description": "...", "args": { } } ],
   "updatedAt": "2026-09-26T10:00:00Z"
 }
 ```
@@ -67,12 +71,31 @@ the user scrolled or switched a tab a moment ago.
   said the component is; datasuite.ui and DataSuite pass it through untouched (cd2030.core: the report kind and its
   options).
 - `filters`, `dataset` and anything else come from the app (`ai_state`); keep them small, the state goes into chat.
+- `askedAbout` (only after an "Ask AI" button was pressed): `{ scope: "page" | "card", cardId, componentId, title, at }`
+  -- the card the user asked about and the component it was showing. DataSuite tells the chat that "this" means it.
 
 ### Actions
 
-Every action is `kind` `"read"` (looks; changes nothing the user sees except scrolling) or `"change"` (changes what the
-user sees, or adds to the dataset). DataSuite runs read actions freely and change actions under the user's setting
-`datasuite.shinyApps.aiAppControl`: `"ask"` (default; the user confirms each one), `"allow"`, or `"off"`.
+Every action has a `level`, which decides whether DataSuite asks the user first (setting
+`datasuite.shinyApps.aiAppControl`):
+
+| Level | What it does | `ask` (default) | `allow` | `off` |
+| --- | --- | --- | --- | --- |
+| `read` | looks; changes nothing the user sees except scrolling | runs | runs | runs |
+| `view` | changes only what the app shows: a page, a tab, the filters | runs | runs | refused |
+| `add` | adds something new the user can remove: a saved report or chart, a new file | runs | runs | refused |
+| `replace` | overwrites or deletes something saved | the user confirms | runs | refused |
+
+The chat asks in the conversation (Allow / Skip, with the chat's own "always allow" choices), before the tool runs.
+Callers outside a chat get a dialog instead.
+
+When the level depends on the arguments (`saveReport` of a report that exists replaces it), the action has a
+`classify` function and the state marks it `"classified": true`; DataSuite then asks the built-in `describeAction`
+`{ action, args }`, which answers `{ action, level, summary }`. `summary` is one sentence the user confirms, e.g.
+`Replace the saved report "National coverage" in kenya.rds`.
+
+`kind` is kept for DataSuite versions from before the levels: `"read"`, or `"change"` for every other level (they ask
+before any change). An app written for them (`kind = "change"`) is treated as `replace`: always asked about.
 
 Built in (datasuite.ui):
 
@@ -83,12 +106,14 @@ Built in (datasuite.ui):
 | `listComponents` | read | | the page's components (as in the state) | the page |
 | `getComponentData` | read | `componentId`, `maxRows` (default 500) | `{ componentId, columns, rows, totalRows, truncated }`: the table the component shows (what its data download writes), `rows` as objects. Works for a tab that isn't showing. | R |
 | `focusComponent` | read | `componentId` | scrolls its card into view; `{ selector }` for a screenshot of the card. Refused, naming the tab, when its tab isn't showing. | the page |
-| `selectTab` | change | `cardId`, `key` | shows that tab; the new state | the page |
-| `navigate` | change | `page` | opens the page; the new state | R |
+| `describeAction` | read | `action`, `args` | `{ action, level, summary }`: what that call would do | R |
+| `selectTab` | view | `cardId`, `key` | shows that tab; the new state | the page |
+| `navigate` | view | `page` | opens the page; the new state | R |
 
-Added by cd2030.core for the Countdown apps (all change): `setFilters { ... }` -> the new state,
-`saveReport { project }` -> `{ reportId }`, `addGraph { spec }` -> `{ graphId }`,
-`generateReport { preset | reportId, format }` -> `{ file }`.
+Added by cd2030.core for the Countdown apps: `setFilters { ... }` (view) -> the new state;
+`saveReport { project, reportId? }` -> `{ reportId }` and `addGraph { spec, graphId? }` -> `{ graphId }` (add; replace
+when the id given is already saved); `generateReport { preset | reportId, format }` -> `{ file }` (add; replace when
+the file exists).
 
 DataSuite adds one of its own, done on its side: `screenshotChart` (`componentId`) = `focusComponent`, then a
 screenshot of the element at `selector`.
@@ -99,15 +124,38 @@ screenshot of the element at `selector`.
 
 - `ai_state`: a function `function(session)` returning a named list merged into the state (e.g. `filters`,
   `dataset`). It is called reactively: when anything it reads changes, the state is published again.
-- `ai_actions`: a list of `ai_action(name, fn, kind = c("read", "change"), description, args = list())`, where
-  `fn(args, session)` returns the result (any JSON-able value), or `ai_reply_when()` to answer once the browser has
-  caught up, or stops with a message for the user.
+- `ai_actions`: a list of `ai_action(name, fn, kind = c("read", "view", "add", "replace"), description, args = list(),
+  classify = NULL, summary = NULL)`, where `fn(args, session)` returns the result (any JSON-able value), or
+  `ai_reply_when()` to answer once the browser has caught up, or stops with a message for the user. `classify(args,
+  session)` gives one call's level when it depends on the arguments; `summary(args, session)` one sentence saying what
+  the call would do, for the user to confirm.
 
 Components: `cd_plot_server()` registers every chart (its `about` argument says what it is); anything else registers
 with `ai_register_component(session, output_id, type, data, about)`. Nothing is computed to list a component; its
 data is computed only when `getComponentData` asks.
 
 Errors in an action come back as `{ ok: false, error: <the condition message> }`; they never reach the user's screen.
+
+### Requests to DataSuite
+
+An app asks DataSuite for something by writing a line to its R session's output:
+
+```
+DATASUITE_HOST_REQUEST {"action":"openChat","query":"Explain \"Reporting rate\": "}
+```
+
+datasuite.ui writes it with `message()` (stderr, unbuffered) and only when the app runs in DataSuite
+(`CDSUITE_SHINY_ID` is set). DataSuite (`shinyAppAiBridge.ts`) acts on lines from an app open in a Shiny tab only.
+
+| Action | Args | What DataSuite does |
+| --- | --- | --- |
+| `openChat` | `query` (at most 1000 characters) | Opens the chat with `query` in the input, for the user to finish or send. Nothing is sent. |
+
+**Ask AI buttons.** The header's button (`HeaderActions`) and each chart card's (`cd_ask_ai_button()`) call the page's
+`askAi()` (aibridge.ts): it records what was asked about (`askedAbout` in the state: the card and the component it
+shows) and sends it to R as `input$datasuite_ask_ai`. The bridge server writes the prompt in the language on screen --
+`lbl_ask_ai_prompt_card` (`Explain "{title}": `) or `lbl_ask_ai_prompt_page` -- and sends `openChat`. Outside
+DataSuite both buttons show, disabled, with the hint `lbl_ask_ai_unavailable`.
 
 ### Custom charts and reports
 

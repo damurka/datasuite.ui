@@ -5,9 +5,9 @@
 # whenever it changes. What only the browser knows (cards, tabs, what is in view, what is drawn, titles) the page adds
 # itself when getState() is called.
 #
-# Built in: getState, listPages, listComponents, getComponentData, focusComponent (read), selectTab and navigate
-# (change). getState, listComponents, focusComponent and selectTab are answered by the page itself (they are about the
-# page), the rest here. An app adds its own actions with app_frame(ai_actions = list(ai_action(...))) and adds to the
+# Built in: getState, listPages, listComponents, getComponentData, focusComponent, describeAction (read), selectTab
+# and navigate (view). getState, listComponents, focusComponent and selectTab are answered by the page itself (they
+# are about the page), the rest here. An app adds its own actions with app_frame(ai_actions = list(ai_action(...))) and adds to the
 # state with app_frame(ai_state = function(session)). Components: every cd_plot_server() registers itself, and any
 # other output can with ai_register_component(), so every chart card is reachable without the app doing anything.
 
@@ -21,19 +21,49 @@
 #' @param fn `function(args, session)`: `args` is the named list the AI sent. Returns the result (anything JSON can
 #'   hold: lists, vectors, data frames), or [ai_reply_when()] to answer once the browser has caught up. To refuse,
 #'   stop with a message for the user.
-#' @param kind `"read"` (looks, changes nothing the user sees) or `"change"` (changes what the user sees or adds to
-#'   the dataset; DataSuite asks the user first, or doesn't allow it, depending on their settings).
+#' @param kind How much the action changes, which decides whether DataSuite asks the user first:
+#'   * `"read"`: looks, changes nothing the user sees.
+#'   * `"view"`: changes only what the app shows (a page, a tab, the filters). Never asked about.
+#'   * `"add"`: adds something new the user can remove (a saved report, a chart, a new file). Not asked about.
+#'   * `"replace"`: overwrites or deletes something saved. Asked about (setting `datasuite.shinyApps.aiAppControl`).
+#'   * `"change"`: the old name for a change of any size; treated as `"replace"`.
+#'   With the setting "off", DataSuite runs none but `"read"` actions.
 #' @param description One sentence telling the AI what the action does.
 #' @param args A named list describing each argument, `name = "what it is"`.
+#' @param classify Optional `function(args, session)` returning the kind of one call when it depends on its arguments
+#'   (e.g. `"add"` for a new report, `"replace"` for one that exists). By default, `kind`.
+#' @param summary Optional `function(args, session)` returning one sentence saying what this call would do, for the
+#'   user to confirm (e.g. `Save the report "X" in data.rds`). By default DataSuite shows the action and its arguments.
 #' @return An `ai_action` object.
 #' @examples
-#' ai_action("highlight", function(args, session) list(done = TRUE), kind = "change",
+#' ai_action("highlight", function(args, session) list(done = TRUE), kind = "view",
 #'           description = "Highlight a region on the map", args = list(region = "a region name"))
 #' @export
-ai_action <- function(name, fn, kind = c("read", "change"), description = "", args = list()) {
-  stopifnot(is.character(name), length(name) == 1, nzchar(name), is.function(fn))
+ai_action <- function(name, fn, kind = c("read", "view", "add", "replace", "change"), description = "", args = list(),
+                      classify = NULL, summary = NULL) {
+  stopifnot(is.character(name), length(name) == 1, nzchar(name), is.function(fn),
+            is.null(classify) || is.function(classify), is.null(summary) || is.function(summary))
   kind <- match.arg(kind)
-  structure(list(name = name, fn = fn, kind = kind, description = description, args = args), class = "ai_action")
+  if (identical(kind, "change")) kind <- "replace"
+  structure(list(name = name, fn = fn, kind = kind, description = description, args = args, classify = classify,
+                 summary = summary), class = "ai_action")
+}
+
+# The kind levels, least to most: what an action's classify() may answer.
+.ai_levels <- c("read", "view", "add", "replace")
+
+# What one call of `action` would do: list(level, summary). Its classify() decides the level when it has one (an
+# answer that isn't a level, or an error, gives its declared kind -- or "replace" when that is safer); a read action
+# is always read. Never throws.
+.ai_describe <- function(action, args, session = NULL) {
+  level <- action$kind
+  if (!identical(level, "read") && is.function(action$classify)) {
+    said <- tryCatch(action$classify(args, session), error = function(e) NULL)
+    level <- if (is.character(said) && length(said) == 1 && said %in% setdiff(.ai_levels, "read")) said else "replace"
+  }
+  summary <- if (is.function(action$summary)) tryCatch(action$summary(args, session), error = function(e) NULL)
+  summary <- if (is.character(summary) && length(summary) == 1 && nzchar(summary)) summary else NULL
+  Filter(Negate(is.null), list(action = action$name, level = level, summary = summary))
 }
 
 #' Answer an AI request once the browser has caught up
@@ -159,8 +189,13 @@ ai_register_component <- function(session, output_id, type = c("chart", "table")
   own <- c("protocol", "app", "page", "viewport", "cards", "components", "actions", "updatedAt")
   state <- list(protocol = 2L, app = app, page = page, components = components)
   for (name in setdiff(names(extra), own)) state[[name]] <- extra[[name]]
+  # `kind` stays "read" or "change" for DataSuite versions before the levels (they ask before any change); `level` is
+  # the action's declared level, and `classified` says describeAction may give a different one for a call
   state$actions <- lapply(unname(actions), function(a) {
-    list(name = a$name, kind = a$kind, description = a$description, args = .ai_object(a$args))
+    out <- list(name = a$name, kind = if (identical(a$kind, "read")) "read" else "change", level = a$kind,
+                description = a$description, args = .ai_object(a$args))
+    if (is.function(a$classify)) out$classified <- TRUE
+    out
   })
   state$updatedAt <- format(updated, "%Y-%m-%dT%H:%M:%SZ", tz = "UTC")
   state
@@ -190,6 +225,42 @@ ai_register_component <- function(session, output_id, type = c("chart", "table")
     if (!is.null(about)) out$about <- about
     out
   })
+}
+
+# Whether the app runs inside DataSuite, which starts it with CDSUITE_SHINY_ID set. Only there can it ask DataSuite
+# for something (the chat, for the Ask AI buttons).
+.cd_in_datasuite <- function() nzchar(Sys.getenv("CDSUITE_SHINY_ID"))
+
+# Asks DataSuite for something: one line on the R session's output, which DataSuite reads (its shinyAppAiBridge.ts).
+# message() goes to stderr, which is not buffered.
+.ai_host_request <- function(action, ...) {
+  if (!.cd_in_datasuite()) return(invisible(FALSE))
+  line <- jsonlite::toJSON(c(list(action = action), list(...)), auto_unbox = TRUE)
+  message("DATASUITE_HOST_REQUEST ", gsub("[\r\n]+", " ", line))
+  invisible(TRUE)
+}
+
+# The chat prompt an Ask AI button starts, in the language on screen: about one card (`asked$title`) or the page.
+.ai_ask_prompt <- function(asked, page_title, lang) {
+  i18n <- tryCatch(cd_i18n(), error = function(e) NULL)
+  text <- function(key, fallback) {
+    if (is.null(i18n)) return(fallback)
+    value <- cd_plain_text(i18n, key, lang)
+    if (identical(value, key)) fallback else value
+  }
+  fill <- function(template, slot, value) {
+    at <- regexpr(slot, template, fixed = TRUE)
+    if (at < 0) return(template)
+    paste0(substr(template, 1, at - 1), value, substr(template, at + nchar(slot), nchar(template)))
+  }
+  title <- if (is.character(asked$title) && length(asked$title) == 1) trimws(asked$title) else ""
+  if (identical(asked$scope, "card") && nzchar(title)) {
+    return(fill(text("lbl_ask_ai_prompt_card", "Explain \"{title}\": "), "{title}", title))
+  }
+  if (nzchar(page_title %||% "")) {
+    return(fill(text("lbl_ask_ai_prompt_page", "Explain the page \"{page}\": "), "{page}", page_title))
+  }
+  ""
 }
 
 # Started by app_frame() once every page server (and so every chart) is up.
@@ -247,7 +318,16 @@ ai_register_component <- function(session, output_id, type = c("chart", "table")
     ai_action("focusComponent", page_side("focusComponent"), "read",
               "Scrolls a component into view and gives a CSS selector for a screenshot of just its card. Its tab must be showing (selectTab).",
               list(componentId = "a component id from listComponents")),
-    ai_action("selectTab", page_side("selectTab"), "change", "Shows one tab of a tabbed card.",
+    ai_action("describeAction", function(args, session) {
+      name <- args$action
+      if (!is.character(name) || length(name) != 1 || is.null(actions[[name]])) {
+        stop(sprintf("There is no action \"%s\".", paste(name, collapse = "")), call. = FALSE)
+      }
+      call_args <- args$args
+      .ai_describe(actions[[name]], if (is.list(call_args)) call_args else list(), session)
+    }, "read", "What one call of an action would do: its level (read, view, add, replace) and a sentence for the user. DataSuite asks this before running a change.",
+    list(action = "an action's name", args = "the arguments the call would have")),
+    ai_action("selectTab", page_side("selectTab"), "view", "Shows one tab of a tabbed card.",
               list(cardId = "a card id from the state", key = "the tab's key")),
     ai_action("navigate", function(args, session) {
       target <- args$page
@@ -257,7 +337,7 @@ ai_register_component <- function(session, output_id, type = c("chart", "table")
       if (locked(page[[1]])) stop(sprintf("The page \"%s\" is locked until a dataset is loaded (and, for analysis pages, adjusted).", page[[1]]$title), call. = FALSE)
       cd_navigate_to(session, target)
       ai_reply_when(ready = function() identical(input$tabs, target), result = function() state_now(target))
-    }, "change", "Opens a page.", list(page = "a page id from listPages"))
+    }, "view", "Opens a page.", list(page = "a page id from listPages"))
   )
   actions <- c(builtin, ai_actions)
   names(actions) <- vapply(actions, function(a) a$name, character(1))
@@ -284,6 +364,15 @@ ai_register_component <- function(session, output_id, type = c("chart", "table")
     } else {
       reply(id, body)
     }
+  })
+
+  # An Ask AI button: open DataSuite's chat with a prompt about what was asked about, for the user to finish. The
+  # page has already put askedAbout in the state it gives the chat (aibridge.ts).
+  observeEvent(input$datasuite_ask_ai, {
+    asked <- input$datasuite_ask_ai
+    lang <- shiny::isolate(language())
+    page <- .ai_page(current_tab(), pages())
+    .ai_host_request("openChat", query = .ai_ask_prompt(asked, page$title, lang))
   })
 
   # Published whenever the page, the language, the data or what the app adds changes (settled first: several of these

@@ -2,6 +2,7 @@ import React from "react";
 import { tr, useLang, useMountSignal } from "../lang";
 import type { LocalText } from "../lang";
 import { usePopover } from "../usePopover";
+import { askAi } from "../aibridge";
 import {
   closeSidebarHoverPreview,
   findNavEntry,
@@ -92,12 +93,14 @@ export interface HeaderActionsProps {
   id?: string;
   askAiLabel: LocalText;
   askAiHint: LocalText;
+  // false outside DataSuite: the button shows, disabled, with the hint saying why
+  askAiEnabled?: boolean;
   languages: { key: string; text: LocalText; flag?: string }[];
 }
 
 // Right side: language switcher + Ask AI, grouped next to the dataset pill/Download report (see cd-header-shiny
 // in cd-shell.R, right after this in the DOM).
-export function HeaderActions({ id, askAiLabel, askAiHint, languages }: HeaderActionsProps) {
+export function HeaderActions({ id, askAiLabel, askAiHint, askAiEnabled = false, languages }: HeaderActionsProps) {
   useMountSignal(id);
   // The page's language, not a prop: it must follow window.cdLang live, the same signal every chip's own text
   // already follows (see lang.ts), not the value this component happened to mount with.
@@ -161,7 +164,13 @@ export function HeaderActions({ id, askAiLabel, askAiHint, languages }: HeaderAc
           </div>
         )}
       </span>
-      <button type="button" className="cd-hdr-btn cd-hdr-btn--accent" title={tr(askAiHint, lang)}>
+      <button
+        type="button"
+        className="cd-hdr-btn cd-hdr-btn--accent"
+        title={tr(askAiHint, lang)}
+        disabled={!askAiEnabled}
+        onClick={() => askAi(null)}
+      >
         <SparkleIcon />
         <span className="cd-hdr-btn__label">{tr(askAiLabel, lang)}</span>
       </button>

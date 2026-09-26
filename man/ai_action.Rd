@@ -7,9 +7,11 @@
 ai_action(
   name,
   fn,
-  kind = c("read", "change"),
+  kind = c("read", "view", "add", "replace", "change"),
   description = "",
-  args = list()
+  args = list(),
+  classify = NULL,
+  summary = NULL
 )
 }
 \arguments{
@@ -19,12 +21,25 @@ ai_action(
 hold: lists, vectors, data frames), or \code{\link[=ai_reply_when]{ai_reply_when()}} to answer once the browser has caught up. To refuse,
 stop with a message for the user.}
 
-\item{kind}{\code{"read"} (looks, changes nothing the user sees) or \code{"change"} (changes what the user sees or adds to
-the dataset; DataSuite asks the user first, or doesn't allow it, depending on their settings).}
+\item{kind}{How much the action changes, which decides whether DataSuite asks the user first:
+\itemize{
+\item \code{"read"}: looks, changes nothing the user sees.
+\item \code{"view"}: changes only what the app shows (a page, a tab, the filters). Never asked about.
+\item \code{"add"}: adds something new the user can remove (a saved report, a chart, a new file). Not asked about.
+\item \code{"replace"}: overwrites or deletes something saved. Asked about (setting \code{datasuite.shinyApps.aiAppControl}).
+\item \code{"change"}: the old name for a change of any size; treated as \code{"replace"}.
+With the setting "off", DataSuite runs none but \code{"read"} actions.
+}}
 
 \item{description}{One sentence telling the AI what the action does.}
 
 \item{args}{A named list describing each argument, \code{name = "what it is"}.}
+
+\item{classify}{Optional \verb{function(args, session)} returning the kind of one call when it depends on its arguments
+(e.g. \code{"add"} for a new report, \code{"replace"} for one that exists). By default, \code{kind}.}
+
+\item{summary}{Optional \verb{function(args, session)} returning one sentence saying what this call would do, for the
+user to confirm (e.g. \verb{Save the report "X" in data.rds}). By default DataSuite shows the action and its arguments.}
 }
 \value{
 An \code{ai_action} object.
@@ -35,6 +50,6 @@ built-in actions (the page, its charts and tables, navigation); an app adds its 
 \code{app_frame(ai_actions = )}.
 }
 \examples{
-ai_action("highlight", function(args, session) list(done = TRUE), kind = "change",
+ai_action("highlight", function(args, session) list(done = TRUE), kind = "view",
           description = "Highlight a region on the map", args = list(region = "a region name"))
 }
