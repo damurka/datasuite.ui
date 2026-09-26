@@ -1,17 +1,22 @@
 # Component reference
 
-Every piece of the shared UI, one entry each: **what it is, when to use it, its arguments, a working example, how it behaves on
+Every piece of the UI the apps are built from, one entry each: **what it is, when to use it, its arguments, a working example, how it behaves on
 the server, what it is related to** (the React component behind it, the CSS, the translation keys, the functions it is used with)
 and **a screenshot**. Screenshots were taken from the live apps (`shell_*`, `page_*`, `wizard_*`) and from the component
 gallery (`cd_*`): run the gallery yourself with
 
 ```r
-shiny::runApp("apps/_shared/docs/gallery")            # rmncah (maroon) theme
+shiny::runApp("docs/gallery")      # from the datasuite.ui folder; rmncah (maroon) theme
 # GALLERY_THEME=vaccine  or  GALLERY_THEME=pooled     # environment variable to see the other themes
 ```
 
-Every image lives in [`img/`](img/). Read [`../README.md`](../README.md) first for how the pieces fit together, and
+Every image lives in [`img/`](img/). Read [`README.md`](README.md) first for how the pieces fit together, and
 [`HOWTO.md`](HOWTO.md) for recipes.
+
+**Which package.** Every entry is **datasuite.ui** (the kit: `R/kit-*.R`, `R/chart-options*.R`, `R/report-*.R`, `js/src`,
+`inst/www`) unless its heading says **(cd2030.core)**: those are the Countdown pieces built on the kit -- `cd_app()`, the
+standard nav sections, `cd_cfg()`, the filters, scoped and tabbed pages, the Load Data wizard, the shared analysis pages
+and the Countdown report content -- in cd2030.core's `R/ui-*.R` and `R/report-countdown.R`, `R/report-preset-*.R`.
 
 **Contents**
 [Conventions](#conventions) ·
@@ -40,7 +45,7 @@ Every image lives in [`img/`](img/). Read [`../README.md`](../README.md) first f
 [panels and dialogs](#panels-and-dialogs) ·
 [rich text](#the-rich-text-commands-richtexttsx) ·
 [R module](#r-side-module-messages-actions) ·
-[cd2030.core](#r-side-cd2030core-functions))
+[R functions](#r-side-the-report-functions))
 
 ---
 
@@ -66,14 +71,18 @@ Every image lives in [`img/`](img/). Read [`../README.md`](../README.md) first f
 ![The Countdown shell: header, sidebar, page](img/shell_landing.png)
 
 The shell is the frame around every page: the **header** (logo, breadcrumb, dataset pill, language switch, Ask AI, Download
-report), the **sidebar** (sections, groups, locked items) and the **content area**. An app never builds these; it calls `cd_app()`.
+report), the **sidebar** (sections, groups, locked items) and the **content area**. An app never builds these; it calls
+`app_frame()` -- a Countdown app calls cd2030.core's `cd_app()`, which is `app_frame()` with the Countdown start screens.
 
-### `cd_app()`
+### `app_frame()` and `cd_app()` (cd2030.core)
 
-Builds the whole app (page, sidebar/header, server) and returns the `shinyApp`. It is the last expression of an app's `app.R`.
+Both build the whole app (page, sidebar/header, server) and return the `shinyApp`; it is what an app's `run_app()` returns.
+`app_frame()` is the kit's, and its arguments are in the package README ("`app_frame()` in short"); `cd_app()` adds the
+Introduction and Load Data screens, the Countdown data readiness rules and the denominator row, so a Countdown app passes:
 
 ```r
-cd_app(app_name, app_version, theme, nav_sections, registry, i18n, language, selected_file)
+cd_app(app_name, app_version, theme, nav_sections, registry, i18n, language, selected_file,
+       upload_ui = upload_data_ui, upload_server = upload_data_server)
 ```
 
 | Argument | Meaning |
@@ -81,20 +90,21 @@ cd_app(app_name, app_version, theme, nav_sections, registry, i18n, language, sel
 | `app_name`, `app_version` | shown under the logo (`Countdown` / `RMNCAH · v2.0.0`) |
 | `theme` | `NULL`/`"rmncah"` (maroon), `"vaccine"` (blue), `"pooled"` (green) - see [Themes](#11-themes) |
 | `nav_sections` | the nav tree: a list of `cd_nav_section()` |
-| `registry` | the page registry (`cd_page_registry` from `pages.R`) |
+| `registry` | the page registry (the app's `R/pages.R`, e.g. `rmncah_pages()`) |
 | `i18n`, `language` | the translator and the starting language |
 | `selected_file` | the dataset DataSuite passed (`CDSUITE_SHINY_SELECTED_FILE`), or `NA` |
+| `upload_ui`, `upload_server` | the app's Load Data screen (its part of the wizard) |
 
-What the server it builds does (so you do not have to): starts the app's `introduction_server()` and `upload_data_server()`; keeps
+What the server it builds does (so you do not have to): starts `introduction_server()` and the app's `upload_server`; keeps
 `data_ready` (a dataset with data has loaded) and `analysis_ready` (it has also been adjusted) and passes them to the sidebar so
 items lock and unlock; snaps back to Load Data if a locked tab is reached another way; latches `page_is()` (`active`) per page;
 keeps the language in sync between the picker and the dataset; renders the header dataset pill and the Download report button; and
-starts every page and header server from the registry. It expects the app to define `introduction_ui/_server` and
-`upload_data_ui/_server`. **Related:** `cd_app_ui`, `cd_shell_server`, `cd_pages_ui/_server`; source `R/core/app.R`.
+starts every page and header server from the registry. **Related:** `cd_app_ui`, `cd_shell_server`, `cd_pages_ui/_server`; source
+`R/kit-app.R` (`app_frame()`) and cd2030.core's `R/ui-core-app.R` (`cd_app()`).
 
 ### `cd_app_ui()`, `cd_app_bar()`, `cd_sidebar()`, `cd_app_body()`, `cd_screens()`, `cd_screen()`
 
-The pieces `cd_app()` assembles; use them directly only for something that is not a normal app (the pooled app and the gallery do).
+The pieces `app_frame()` assembles; use them directly only for something that is not a normal app (the pooled app and the gallery do).
 
 ```r
 ui <- cd_app_ui(theme = "pooled", title = "Pooled",
@@ -106,7 +116,7 @@ ui <- cd_app_ui(theme = "pooled", title = "Pooled",
 * `cd_app_ui(header, sidebar, body, title, theme)` - the HTML page: jQuery, meta tags, the [start-up loader](#cd_startup_loader), the
   `cd-theme-<theme>` class on `<body>`.
 * `cd_app_bar(app_name, app_version)` - the header. Its right-hand outputs (`cd_header_crumb`, `header_pill`, `download_buttons`,
-  `cd_header_actions`) are rendered by `cd_shell_server()` and by `cd_app()`.
+  `cd_header_actions`) are rendered by `cd_shell_server()` and by `app_frame()`.
 * `cd_screens(...)` / `cd_screen(tabName, ...)` - the top-level page containers (`div#cd-page-<tabName>`); exactly one is shown, switched
   by the sidebar (`nav.ts`).
 * `cd_app_body(...)` - the padded content area.
@@ -129,7 +139,7 @@ cd_nav_section("lbl_nav_section_quality",
 | `cd_nav_section(label, ...)` | `label`: translation key of the small uppercase heading; `...` the items |
 | `cd_nav_item(label, tabName, icon, i18n, children, requires_adjustment)` | a leaf has `tabName` (matches a `cd_screen()` and a registry `id`); a group has `children`. `icon` is a Font Awesome name. `requires_adjustment = TRUE` locks it until Data Adjustment has run (only set on top-level items) |
 
-The sections both apps share: `cd_nav_start()` (Introduction, Load Data), `cd_nav_quality()` (Data Quality, Remove Years, Data
+**(cd2030.core)** The sections every Countdown app shares: `cd_nav_start()` (Introduction, Load Data), `cd_nav_quality()` (Data Quality, Remove Years, Data
 Adjustment), `cd_nav_denominators()`, `cd_nav_national(extra = list())` and `cd_nav_subnational()` (`extra`: more items for that group,
 e.g. rmncah's Continuum of Care). An app composes them and adds its own groups:
 
@@ -139,12 +149,13 @@ cd_nav_sections <- list(cd_nav_start(), cd_nav_quality(), cd_nav_denominators(),
 ```
 
 Locking: everything except Introduction and Load Data is locked (padlock, greyed) until a dataset has loaded; a click on a locked item
-shows a notification (`err_nav_locked`). **Related:** `cd_shell_server()`, React `Sidebar`, `nav.ts`; source `R/layout/shell.R`, `nav-sections.R`.
+shows a notification (`err_nav_locked`). **Related:** `cd_shell_server()`, React `Sidebar`, `nav.ts`; source `R/kit-shell.R` (and cd2030.core's
+`R/ui-layout-nav-sections.R` for the standard sections).
 
 ### `cd_shell_server()`
 
 `cd_shell_server(output, sections, initial_tab, data_ready, analysis_ready = data_ready, i18n, docs_href)` renders the sidebar, the
-breadcrumb and the header actions, and locks items as `data_ready()` / `analysis_ready()` change. `cd_app()` calls it; call it yourself
+breadcrumb and the header actions, and locks items as `data_ready()` / `analysis_ready()` change. `app_frame()` calls it; call it yourself
 only in a custom app, with `data_ready = reactive(TRUE)` if nothing needs locking.
 
 ### `cd_startup_loader()`
@@ -161,10 +172,11 @@ waiter/hostess packages.
 `<head>` tags: `cd-ui.css`, `fonts.css`, `i18n-fix.js` (a workaround for a shiny.i18n bug that logged an error on every language change),
 each with `?v=<file mtime>` so browsers do not keep an old copy. Put it once in `cd_app_body()`.
 
-### `cd_cfg()`
+### `cd_cfg()` (cd2030.core)
 
 `cd_cfg(key, default = NULL)` reads the app's `options(cd2030.config = list(...))`; a value may be a function, evaluated when read. This is
-how the shared modules get the things that differ per app. Keys are listed in `R/core/config.R` and the README. Read it inside functions
+how the shared Countdown pages get the things that differ per app. Keys are listed in cd2030.core's `R/ui-core-config.R` and in
+`README.md`. Read it inside functions
 (at call time), never at the top level of a file: top-level code runs before the app has set its options.
 
 ---
@@ -173,9 +185,9 @@ how the shared modules get the things that differ per app. Keys are listed in `R
 
 ![A page: filter bar, header, cards](img/page_data_missingness.png)
 
-An analysis page is a *module* (`<name>_ui`, `<name>_server`) plus one **registry entry** in the app's `pages.R`. The registry holds
+An analysis page is a *module* (`<name>_ui`, `<name>_server`) plus one **registry entry** in the app's `R/pages.R`. The registry holds
 everything about a page that is not its content: title, section, subtitle, help chapter, whether it shows the denominator row, the report
-key. So a module never repeats them and `cd_app()` can build all page containers, headers and servers from one list.
+key. So a module never repeats them and `app_frame()` can build all page containers, headers and servers from one list.
 
 ### `cd_page_def()`, `cd_use_pages()`, `cd_page_meta()`
 
@@ -194,7 +206,7 @@ cd_page_registry <- list(
     active = TRUE                               # FALSE: the server is not given `active`
   )
 )
-cd_use_pages(cd_page_registry)                  # once, at the end of pages.R
+cd_use_pages(cd_page_registry)                  # once, before the app is built (in run_app())
 ```
 
 `cd_page_meta(id)` returns one entry (used by `cd_page_ui()`). A page with `report` set gets a **Generate report** button in its header
@@ -216,10 +228,10 @@ my_page_ui <- function(id, i18n) {
 
 ### `cd_pages_ui()`, `cd_pages_server()`
 
-Used by `cd_app()`: `cd_pages_ui(pages, i18n)` builds one `cd_screen()` per entry; `cd_pages_server(pages, cache, i18n, page_is)` starts each page
+Used by `app_frame()`: `cd_pages_ui(pages, i18n)` builds one `cd_screen()` per entry; `cd_pages_server(pages, cache, i18n, page_is)` starts each page
 server with `active = page_is(id)` and each page's header server. You only call them in a custom app.
 
-### `cd_page_header()` and `cd_denominator_row()`
+### `cd_page_header()` and `cd_denominator_row()` (cd2030.core)
 
 ![Page header with the denominator row](img/cd_page_header.png)
 
@@ -235,14 +247,16 @@ cd_page_header_server(id, cache, path, section = NULL, i18n, key = id)
 
 `cd_page_ui()` builds this from the registry and `cd_pages_server()` starts the server half, so call these directly only for a page that is
 not in the registry (the Load Data page: `cd_page_header(id = ns("load_data"), ...)` then `cd_page_content(...)`). The denominator row shows
-the maternal chip only when the app's group has a maternal denominator (`cd_has_maternal()`).
+the maternal chip only when the app's group has a maternal denominator (`cd_has_maternal()`). `cd_page_header()` is the kit's;
+`cd_denominator_row()` is cd2030.core's, which adds it to every page header through `app_frame(page_header_extra =
+cd_denominator_header)`.
 
 ### `cd_page_body()`, `cd_page_content()`, `cd_tag_assert()`
 
 `cd_page_body(dashboardId, dashboardTitle, i18n, ..., filters, ...)` is what `cd_page_ui()` calls (header + filters + content); `cd_page_content(...)` is
 the padded content wrapper. `cd_tag_assert()` is an internal shape check for the pieces passed to `cd_app_ui()`.
 
-### Scoped pages: `cd_scope()`, `cd_scoped_page_ui()`, `cd_scoped_page_server()`
+### Scoped pages: `cd_scope()`, `cd_scoped_page_ui()`, `cd_scoped_page_server()` (cd2030.core)
 
 Pages that are *the same analysis at a different geography* (national vs sub-national coverage, target, inequality) differ only in which admin-level
 filters they show and what admin level / region they hand to the analysis module. A scoped page says just that.
@@ -338,8 +352,8 @@ A multi-choice chip (several years). Choosing **nothing means "all"**, and reach
 
 ```r
 cd_chip_multi(inputId, label, choices = NULL, i18n, selected = NULL, hint = NULL, options = NULL, all_label = "lbl_all_years")
-cd_years_sync(input, session, id = "years", years, selected)      # keeps its options and value in sync with the cache
-cd_years_input(value, all_years)                                   # its value as integers; "" -> all_years
+cd_years_sync(input, session, id = "years", years, selected)      # (cd2030.core) keeps its options and value in sync with the cache
+cd_years_input(value, all_years)                                   # (cd2030.core) its value as integers; "" -> all_years
 ```
 
 `""` is *all*, and `as.integer("")` is `NA`, and `NA` years plot nothing - so always turn the value into years with `cd_years_input()` before storing it:
@@ -355,7 +369,7 @@ observeEvent(input$years, cache()$set_mapping_years(cd_years_input(input$years, 
 A chip that holds one number (a threshold), with optional quick picks. `cd_chip_number(inputId, label, i18n, value, min, max, step, unit = "", picks = NULL, default = NULL, hint = NULL)`. It validates min/max as
 you type; `picks` is a vector of preset values shown as buttons. Example: Reporting Rate's *Performance Threshold* (`90%`).
 
-### `cd_palette_chip()`
+### `cd_palette_chip()` (cd2030.core)
 
 `cd_palette_chip(inputId, i18n, first = "Greens")` - the colour palette chip for maps: Greens, Blues, Reds, Purples (`first` is the one it opens with;
 Mortality Mapping opens on Reds, Service Utilization on Purples). Its value is an RColorBrewer palette name the core map functions accept
@@ -385,7 +399,7 @@ cd_text_area(inputId, label = NULL, i18n, value = "", placeholder = NULL, height
 
 **Related:** React `FieldNumber`, `FieldSelect`, `CdCheckbox`, `CdTextArea`; CSS `.cd-field-stack`, `.cd-field-grid`, `.cd-field-label`; `cd_button` for the form's action.
 
-### `cd_admin_level_ui()` / `cd_admin_level_server()` / `cd_admin_parts()`
+### `cd_admin_level_ui()` / `cd_admin_level_server()` / `cd_admin_parts()` (cd2030.core)
 
 ![Admin level, region and denominator chips on a page](img/page_denominator_selection.png)
 
@@ -410,13 +424,13 @@ parts <- cd_admin_parts(admin); admin_level <- parts$admin_level; region <- part
 The region chip keeps rendering while its page is hidden (`suspendWhenHidden = FALSE`) because the whole page waits for its value. **Related:** `cd_scope`
 (builds this for you), `cd_region` options come from `cache()$subnational_regions`.
 
-### `cd_indicator_ui()` / `cd_indicator_server()`
+### `cd_indicator_ui()` / `cd_indicator_server()` (cd2030.core)
 
 `cd_indicator_ui(id, i18n, label = NULL, tooltip = NULL, indicators = NULL, select_all = FALSE)` - an indicator chip; `indicators` defaults to `get_all_indicators()`
 (so it follows the app's group); `select_all = TRUE` adds an "All" entry whose value is `""`. `cd_indicator_server(id)` returns `reactive(input$indicator)`. Used on
 Reporting Rate, Outlier Detection, Data Missingness and in the Custom tab. The tooltip is a translation key.
 
-### `cd_denominator_ui()` / `cd_denominator_server()` and helpers
+### `cd_denominator_ui()` / `cd_denominator_server()` and helpers (cd2030.core)
 
 `cd_denominator_ui(id, i18n, allow_input = FALSE, is_maternal = FALSE)` / `cd_denominator_server(id, cache, i18n, label, allowInput = FALSE, is_maternal = FALSE, display_mode = "combined")`.
 A chip kept in sync with the cache's vaccination (or maternal) denominator; choosing writes it to the cache. Helpers:
@@ -427,7 +441,7 @@ A chip kept in sync with the cache's vaccination (or maternal) denominator; choo
 | `cd_has_maternal()` | `cd_cfg("has_maternal")`, falling back to "the group is not vaccine" |
 | `cd_only_denominators(x)` | keep the entries of a named list/vector that are denominators this app offers (plus `"un"`); used for chart legends |
 
-### `cd_population_ui()` / `cd_population_server()`
+### `cd_population_ui()` / `cd_population_server()` (cd2030.core)
 
 The population-source select on Denominator Assessment (`cd_population_ui(id)`, `cd_population_server(id, cache)`); it keeps the cache's derivation population in sync.
 
@@ -503,17 +517,17 @@ cd_plot_server("ratios", i18n = i18n,
 
 The **Customize** tool (the sliders icon) is one panel for everything about how a chart looks. It edits **this chart only**, and an **Apply to** switch says where: **Screen** (this chart, also used for its downloaded image), **Report** (the generated report), or **Both**.
 
-- **Chart ids.** Every chart has an id made from the data it draws: `cd2030.core::cd_chart_id()` = kind of data . admin level . indicator, e.g. `coverage_filtered.national.anc4`. The panel shows it under its title. Ids are grouped by their parts: everything starting `coverage_filtered.national` is the national coverage charts. The app and the reports build the id the same way (every `plot()` method passes the data it was given to `cd_finish_plot(.source = )`), so a **Report** setting saved for a chart reaches the same chart in a generated report, with no chart id written in the template. A chart whose data does not say what it is (no admin level or indicator) is identified by its data kind alone, and one with no kind by its type of graph (`cd_chart_type()`).
+- **Chart ids.** Every chart has an id, from the app's `report_register(chart_id = )` (else `cd_chart_type()`). Countdown's is made from the data it draws: `cd2030.core::cd_chart_id()` = kind of data . admin level . indicator, e.g. `coverage_filtered.national.anc4`. The panel shows it under its title. Ids are grouped by their parts: everything starting `coverage_filtered.national` is the national coverage charts. The app and the reports build the id the same way (every `plot()` method passes the data it was given to `cd_finish_plot(.source = )`), so a **Report** setting saved for a chart reaches the same chart in a generated report, with no chart id written in the template. A chart whose data does not say what it is (no admin level or indicator) is identified by its data kind alone, and one with no kind by its type of graph (`cd_chart_type()`).
 - **By chart element** (`ChartElements.tsx`), as PowerPoint's Format pane: Chart title, Subtitle, Source note, Horizontal/Vertical axis title, Horizontal/Vertical axis labels, Legend, Legend title, Data labels, Gridlines, Bars/lines/points, Panel headings, Chart area, All text. Each is a section that opens to its own settings; its **first choice, in its header, is a Show switch** (`show_title`, `show_x_title`, `show_legend`, `show_labels`... in `cd_chart_options()`). Hidden leaves no space for the element; a hidden element says *Hidden* and its settings stay closed. **Search** finds an option across all elements by its name or a related word ("angle", "font", "colour", "percent").
 - In the report builder the same switches are on the **Chart Design** tab's **Chart Elements** checklist (Excel's "+" button).
 - Every changed option has a gold dot and its own reset; each option group has *Reset group*; the footer has *Reset all* (for the target selected). The count and the values shown are the report's when *Report* is selected, the screen's otherwise.
 - The panel is a wide popover **fixed to the window** (under 720px wide it is a bottom sheet), so it never adds to the page's scroll.
 
-**Adding an option:** one line in `CHART_FIELDS` (`_shared/R/charts/chart-schema.R`: key, element, group, control; a new element goes in `CHART_TABS` with its icon and its `show` option) and its translation key `lbl_style_f_<key>`. The panel (`ChartCustomize.tsx`, `ChartCustomizeFields.tsx`) draws whatever is listed there.
+**Adding an option:** one line in `CHART_FIELDS` (`R/kit-chart-schema.R`: key, element, group, control; a new element goes in `CHART_TABS` with its icon and its `show` option) and its translation key `lbl_style_f_<key>`. The panel (`ChartCustomize.tsx`, `ChartCustomizeFields.tsx`) draws whatever is listed there.
 
-**Stored in the dataset.** The panel's values are `cd2030.core::cd_chart_options()`, kept by `cache$set_chart_options(<chart id>, options)` for the screen (the chart's module path) and `cache$set_chart_options("report/<chart id>", options)` for reports, saved with the dataset. `generate_report(use_chart_options = TRUE)` renders every chart with the dataset-wide `"default"` options (set from R) then those saved for its type of graph, then those saved for the chart itself; options a report template passes to `plot()` win. Every `plot()` method takes `options =` (and any chart option by name in `...`): `plot(x, options = cd_chart_options(x_text_angle = 45, grid = "horizontal"))`. See `?cd_chart_options`.
+**Stored in the dataset.** The panel's values are `cd_chart_options()`, kept by `cache$set_chart_options(<chart id>, options)` for the screen (the chart's module path) and `cache$set_chart_options("report/<chart id>", options)` for reports, saved with the dataset. A report (`export_report()`, through `with_report_chart_options()`) draws every chart with the dataset-wide `"default"` options (set from R) then those saved for its type of graph, then those saved for the chart itself; options a report block passes win. Every cd2030.core `plot()` method takes `options =` (and any chart option by name in `...`): `plot(x, options = cd_chart_options(x_text_angle = 45, grid = "horizontal"))`. See `?cd_chart_options`.
 
-**How it works.** `plot_fun` runs once per data change to build the ggplot; the chart options are applied on top of it (`cd_apply_chart_options()` in `chart-state.R`; `cd_chart_layout()`, `cd_chart_axes()` and `cd_chart_label_defaults()` in `chart-layout.R`), never inside `plot_fun`. The renderer `cd_render_plot()` shows a skeleton while calculating, rethrows errors (a red message in the card, never a silent blank)
+**How it works.** `plot_fun` runs once per data change to build the ggplot; the chart options are applied on top of it (`cd_apply_chart_options()` in `R/kit-chart-state.R`; `cd_chart_layout()`, `cd_chart_axes()` and `cd_chart_label_defaults()` in `R/kit-chart-layout.R`), never inside `plot_fun`. The renderer `cd_render_plot()` shows a skeleton while calculating, rethrows errors (a red message in the card, never a silent blank)
 and grows the plot when the card is expanded (`cd_plot_client_height()`). `cd_plot_output(id)` is the plain output. **Note:** `str_glue(i18n$t("template"))` inside `plot_fun` reads `{names}` from the function around it, so
 define the variables the template uses (e.g. `vacc1`, `vacc2`) in `plot_fun` first. **Related:** React `ChartCustomize`, `ExpandButton`, `ToolFrame`; `cd_chart_customize()`, `cd_expand_button()`, `cd_ask_ai_button()`.
 
@@ -544,7 +558,7 @@ lapply(c("a", "b"), function(k) observeEvent(input[[paste0("tab_", k)]], {
 
 Hidden panes are not computed (Shiny suspends hidden outputs), so only the visible tab's chart is built.
 
-### `cd_tabbed_charts_ui()` / `cd_tabbed_charts_server()` - one tab per indicator
+### `cd_tabbed_charts_ui()` / `cd_tabbed_charts_server()` - one tab per indicator (cd2030.core)
 
 ![A tabbed chart card: one tab per indicator plus Custom Check](img/page_national_coverage.png)
 
@@ -585,7 +599,7 @@ cd_tabbed_charts_server("panel", indicators = cd_cfg("target_indicators"), showC
 
 Tab labels are `opt_<indicator>` translation keys, so every indicator an app offers needs one. `cd_default_indicator_set()` is what "the app default" resolves to.
 
-### `cd_coverage_plot_ui()` / `cd_coverage_plot_server()`
+### `cd_coverage_plot_ui()` / `cd_coverage_plot_server()` (cd2030.core)
 
 `cd_coverage_plot_ui(id, toolbar_inline = FALSE)`; `cd_coverage_plot_server(id, filename, data_fn, ..., sheet_name, i18n, plot_fun = NULL)`; `cd_coverage_plot_toolbar_ui(id)`.
 `cd_plot_server` specialised for the tabbed cards. `filename` and `sheet_name` are reactives; without `plot_fun` it calls `plot(d, ...)` on the core data object
@@ -596,7 +610,7 @@ dropped). The id nests one level deeper (`<id>-plot`), which `cd_coverage_plot_t
 
 ## 5. Tables and downloads
 
-### `cd_table_ui()` / `cd_table_server()`
+### `cd_table_ui()` / `cd_table_server()` (cd2030.core)
 
 ![A table card next to a chart card](img/page_reporting_rate_cards.png)
 
@@ -765,14 +779,14 @@ Page-level buttons in the header of a page (`cd_page_header()` builds them from 
 | --- | --- |
 | `cd_help_button_ui(id, name, i18n)` / `cd_help_button_server(id, path, section = NULL, cache)` | **Get help**: opens the documentation site in the browser, in the dataset's language (`datasuite.vercel.app/<lang>/docs/framework/`), at `#section` when the registry gives one |
 | `cd_notes_button_ui(id, i18n)` / `cd_notes_button_server(id, cache, document_objects, page_id, page_name, i18n)` | **Add notes**: a dialog to attach a note to an object on the page, which goes into the report |
-| `cd_report_button_ui(id, label, i18n)` / `cd_report_button_server(id, cache, report_name, i18n, adminlevel_1)` | **Generate report**: builds the report for this page as a Word document in the background and offers it for download |
-| `cd_download_report_ui(id, i18n)` / `cd_download_report_server(id, cache, i18n)` | The header's **Download report**: the whole-country report, built in the background; a click on incomplete data shows an error dialog instead |
+| (the header's `include_report` button, `cd_page_header_server()`) | **Generate report**: opens the Reports page with the page's standard report (`cd_request_report(session, key)`), ready to be named |
+| (the app bar's report button, `app_frame()`) | opens the Reports page (shown once data is ready and the app has a Reports page, `cd_has_reports()`) |
 
 ---
 
 ## 8. Shiny and translation helpers
 
-### Talking to components (`R/core/shiny.R`)
+### Talking to components (`R/kit-shiny.R`)
 
 | Function | Purpose |
 | --- | --- |
@@ -787,7 +801,7 @@ mounted <- cd_mounted(input, "years")
 observeEvent(list(years(), mounted()), { req(mounted()); cd_update_input("years", session, options = cd_plain_options(years())) })
 ```
 
-### Translation (`R/core/i18n.R`)
+### Translation (`R/kit-i18n.R`)
 
 | Function | Purpose |
 | --- | --- |
@@ -800,9 +814,11 @@ observeEvent(list(years(), mounted()), { req(mounted()); cd_update_input("years"
 | `cd_options(choices, i18n)` | `c(<key> = value)` -> option list with translated text |
 | `cd_plain_options(values, groups = NULL)` | data as options (regions, years); `groups` adds group headings |
 | `cd_chip_texts(i18n)` | the shared text every chip needs (Reset, Search, ...) |
-| `cd_translations(app_file, extra = character())` | merge `shared.json` + the app's file (+ `extra` files) into one temp JSON for `init_i18n()`; later layers win |
+| `cd_translations(app_file, extra = character())` | merge the kit's `inst/translation/ui.json`, every file registered with `cd_register_translations()`, the app's file (+ `extra` files) into one temp JSON for `init_i18n()`; later layers win |
+| `cd_register_translations(path)` | add a package's translation file to the layers (cd2030.core registers `cd2030.json` in its `.onLoad()`) |
+| `cd_read_translation_file(path)` | one translation file as a list of entries |
 
-### Assets and plumbing (`R/core/assets.R`)
+### Assets and plumbing (`R/kit-assets.R`)
 
 `cd_react_element(name, props)` builds a `shiny.react` element for the component `name` in the bundle; `cd_react_dependency()` is the bundle's HTML dependency; `cd_icon_class(icon)` resolves a Font Awesome icon *name* to its CSS class (what React
 components take).
@@ -811,7 +827,7 @@ components take).
 
 ## 9. The Load Data wizard
 
-The wizard is how a dataset gets into an app. Seven steps, each a card; a rail on top shows where you are.
+**(cd2030.core**, `R/ui-wizard-*.R`; only the step rail, `cd_wizard_steps()`, is the kit's.) The wizard is how a dataset gets into an app. Seven steps, each a card; a rail on top shows where you are.
 
 ![Step 1: Upload Data - the rail, the upload banner, reference data zones](img/wizard_step1_upload.jpg)
 
@@ -858,7 +874,7 @@ The wizard is how a dataset gets into an app. Seven steps, each a card; a rail o
 
 ### Per-app configuration
 
-Everything above is identical for every indicator group. An app states only its own part, once, in its `modules/0_upload_data.R` (which also assembles the panels and defines `upload_data_ui` / `upload_data_server`):
+Everything above is identical for every indicator group. An app states only its own part, once, in its `R/page-0_upload_data.R` (its `<app>_wizard_options()`; the file also assembles the panels and defines `upload_data_ui` / `upload_data_server`):
 
 ```r
 options(cd2030.wizard = list(
@@ -881,8 +897,8 @@ options(cd2030.wizard = list(
 
 ## 10. Shared page modules
 
-Pages that are identical for every indicator group live in `R/modules/` and are used by both apps; an app's `pages.R` just names them. They read what differs per app with `cd_cfg()`
-(see the README's config table). Each is `<page>_ui(id, i18n)` / `<page>_server(id, cache, i18n, active)`.
+**(cd2030.core**, `R/ui-page-*.R`.) Pages that are identical for every indicator group are used by every Countdown app; an app's `R/pages.R` just names them. They read what differs per app with `cd_cfg()`
+(see the config table in `README.md`). Each is `<page>_ui(id, i18n)` / `<page>_server(id, cache, i18n, active)`.
 
 | Page (registry id) | Module | Reads from config | Built from |
 | --- | --- | --- | --- |
@@ -903,7 +919,7 @@ Pages that are identical for every indicator group live in `R/modules/` and are 
 | `equity_assessment` | `equity` | `equity_indicators`, `equity_custom_exclude` | `cd_tabbed_charts` |
 | (Introduction, not in the registry) | `introduction` | - | a help markdown per language |
 
-Anything genuinely specific to one group stays in that app's `modules/` (rmncah's mortality, service utilization, health-system and Bayesian pages; each app's `0_upload_data.R`).
+Anything genuinely specific to one group stays in that app's package (`R/page-*.R`: rmncah's mortality, service utilization, health-system and Bayesian pages; each app's `R/page-0_upload_data.R`).
 
 ![A shared page in use: National Coverage](img/page_national_coverage.png)
 
@@ -913,7 +929,7 @@ Anything genuinely specific to one group stays in that app's `modules/` (rmncah'
 
 ## 11. Themes
 
-`cd_app(theme = ...)` puts `cd-theme-<name>` on `<body>`; the last block of `www/cd-ui.css` ("App themes") re-declares five tokens (`--cd-primary`, `--cd-primary-hover`, `--cd-primary-rgb`, `--cd-primary-ink`, `--cd-primary-tint`). Components only use the tokens, so
+`app_frame(theme = ...)` puts `cd-theme-<name>` on `<body>`; the last block of `inst/www/cd-ui.css` ("App themes") re-declares five tokens (`--cd-primary`, `--cd-primary-hover`, `--cd-primary-rgb`, `--cd-primary-ink`, `--cd-primary-tint`). Components only use the tokens, so
 a new theme is one CSS block. **Never hard-code a brand colour in a component.**
 
 | Theme | `theme =` | Colour | Used by |
@@ -950,18 +966,20 @@ R function -> React component (`js/src/components/*.tsx`), all registered in `js
 Scripts that are not components: `lang.ts` (the `cd-lang` message and `useLang()`; every text prop is `{en, fr, pt}` shown with `tr(text, lang)`), `nav.ts` (top-level page switching, sidebar and collapse state, the `cd-navigate` message, a `resize` after each switch so
 Shiny re-checks which outputs are visible), `tabswitch.ts` (`cd-tab-switch`, for `cd_update_tab_panes`), `spinner.ts` (the skeleton state machine), `dialog.ts` (closing dialogs), `matching.ts` (region auto-matching), `usePopover.ts`.
 
-Build: `cd js && npm run build` (type-check, then webpack) writes `apps/_shared/www/cd-react/cd-react.js`, which is committed. See `HOWTO.md` -> "Add a React component".
+Build: `cd js && npm run build` (type-check, then webpack) writes `inst/www/cd-react/cd-react.js`, which is committed. See `HOWTO.md` -> "Add a React component".
 
 ---
 
 ## 13. Reports page and report builder
 
-`reports_ui()` / `reports_server()` (`_shared/R/modules/reports.R`) and React `ReportStudio` (`js/src/components/ReportStudio.tsx`,
-`js/src/components/report/`). An app turns it on with one page entry (`id = "reports"`, see rmncah's `pages.R`) and a nav item.
+`reports_ui()` / `reports_server()` (`R/kit-reports.R`) and React `ReportStudio` (`js/src/components/ReportStudio.tsx`,
+`js/src/components/report/`). An app turns it on with one page entry (`id = "reports"`, see rmncah's `R/pages.R`) and a nav item.
+What the reports contain -- the kinds of chart and table, the standard reports, extra fields, a theme -- is the app's, given
+with `report_register()` (cd2030.core registers Countdown's; see "R side: the report functions" below).
 The bullets below describe what the builder does; the [component reference](#where-the-code-is) after them documents every
 component, hook and function it is made of, and the R side.
 
-- **Reports home:** the dataset's reports (open, duplicate, delete) and the standard reports (`cd2030.core::report_presets(lang, group)`),
+- **Reports home:** the dataset's reports (open, duplicate, delete) and the standard reports (registered as `report_register(presets = )`; Countdown's are `cd2030.core::report_presets(lang, group)`),
   each opened as an editable copy. The standard reports are the Countdown reports of each analysis section, in the order of the analysis
   (data quality, adjustment, denominators, national coverage, inequality, mortality, service utilization, health system, private sector),
   then the **synthesis chartbook** (chartbook page, 13.93 × 22 in) and the **sub-national one-pager** (poster page, 22 × 17 in
@@ -986,7 +1004,7 @@ component, hook and function it is made of, and the R side.
   undo and redo in chunks, charts and settings included. Charts, tables and pictures are parts inside the text (`rbBlock`,
   `flow/BlockView.tsx`), still drawn by R; pictures can be dropped on the page or pasted. The report is still saved as its blocks
   (`flow/convert.ts`): each block's `text` is a small HTML subset (inline formatting; `<p>`, nested `<ul>/<ol>` in lists, notes and
-  quotes; plain text for preformatted blocks), new block types `list`, `quote`, `pre`, headings levels 1 to 6. `cd2030.core` writes
+  quotes; plain text for preformatted blocks), new block types `list`, `quote`, `pre`, headings levels 1 to 6. The export writes
   them to Word (`.rb_lines()` reads list levels, `.rb_docx_fpars()`, Heading 3 to 6 styles). Lists are Word numbering
   (each list its own, 1. a. i. / bullets by level; `.rb_docx_numbering()`), headings keep their formatting, links (Insert > Link) are
   Word hyperlinks. Older reports open unchanged.
@@ -999,7 +1017,7 @@ component, hook and function it is made of, and the R side.
   larger counts), the last block's space after may fall into the bottom margin, and a heading or a short paragraph before a
   chart stays with what follows. Positions are measured without the gaps already in place, so the
   layout settles in one pass. The side-by-side view shows a copy of these pages. Word's own layout is in *Final pages*.
-- **Fields:** `{country}`, `{latest_year}`, `{anc4_latest}`... (`cd2030.core::report_field_catalog()`) typed anywhere, or inserted from
+- **Fields:** `{country}`, `{latest_year}`, `{anc4_latest}`... (`report_field_catalog()`: the built-in ones plus those the app registers) typed anywhere, or inserted from
   the ribbon's *Field* menu; shown as shaded chips with their value (`cd-report-fields`), filled in when the file is written.
 - **Charts:** *Chart Design* has what the chart shows (indicator, level, region, year), its width, legend, title, gridlines, style and
   colours; *Format* its font, text size, data label size, axis label angles, line width, point size and bar width, as number boxes that
@@ -1011,7 +1029,7 @@ component, hook and function it is made of, and the R side.
   pages fit across the window they are laid side by side (Word's multi-page view), so a small zoom never needs sideways scrolling. A page
   wider than the window (poster, chartbook, landscape) opens fitted to the width.
 - **Palette order:** the blocks are grouped by analysis step (`report_block_kinds()` sorts them).
-- **Pictures** (`report/Picture.tsx`, `cd2030.core:::.rb_image_file()`): from this computer, dropped on the page, pasted, or from a
+- **Pictures** (`report/Picture.tsx`, `.rb_image_file()` in `R/report-export.R`): from this computer, dropped on the page, pasted, or from a
   web address (downloaded by R at once, so the report needs no internet later). Each is kept once in the dataset
   (`cache$set_report_asset()`, `report_store_asset()`; a block's `src` is `"asset:<id>"`; pictures inside older reports move there
   when they open); the Word file and the PDF embed their own copy. Resize by a corner handle (the shape is kept), stretch by a
@@ -1025,7 +1043,7 @@ component, hook and function it is made of, and the R side.
   them as the file will: geometry on a canvas, colours with CSS filters that do the same arithmetic as the magick levels used for
   the Word file.
 - **Charts as pictures:** a chart has the Picture Format tab too (after Chart Design and Format), and the same menu and handles:
-  it is shown as a picture of its drawing (`layout.ts` `asPicture()` / `shownInches()`, `cd2030.core:::.rb_shown_size()`): width
+  it is shown as a picture of its drawing (`layout.ts` `asPicture()` / `shownInches()`, `.rb_shown_size()` in `R/report-builder.R`): width
   as a percent of its column, crop, turn, flip, colours, shape, border, wrapping and spacing. Unformatted it is written as before
   (SVG with a PNG copy); once cropped, turned, recoloured or shaped (`.rb_chart_pictured()`) it is drawn at 300 dpi and changed by
   `.rb_image_file()` like a picture.
@@ -1048,13 +1066,13 @@ component, hook and function it is made of, and the R side.
   them too.
 - **Panels:** a chart drawn as panels (by year, district, method...) gets a Panels group on Chart Design: panels across and
   down, shared or separate axes, where the panel names go (options `facet_ncol`, `facet_nrow`, `facet_scales`,
-  `strip_position`; `cd2030.core::chart_facet_info()` tells the editor how a chart is drawn).
+  `strip_position`; `chart_facet_info()` tells the editor how a chart is drawn).
 - **Blocks panel:** each chart has a small picture of itself drawn with its first settings (`cd_report_thumb()`, once per
   dataset, one per turn after the report's previews); a Custom section waits for charts made for the dataset (later, by
   asking the AI).
 - **Cover:** its kicker, title, subtitle and reference are typed on the page (fields show as typed while editing); the
   rest (layout, logos, editors, date) is in its pane.
-- **Slide decks** (`report/DeckEditor.tsx`, `report/deck.ts`; R `cd2030.core::export_deck()`): a report with `kind = "deck"`
+- **Slide decks** (`report/DeckEditor.tsx`, `report/deck.ts`; R `export_deck()`): a report with `kind = "deck"`
   has `slides`, each with a layout (Title Slide, Title and Content, Two / Three Content, Comparison, Title Only, Section
   Header, Blank: `LAYOUTS`, the same as `report_deck_layouts()`), items anywhere on the slide (`x, y, w, h` in inches; the
   first at the back) and speaker notes. Slides down the left (drag to reorder, duplicate, delete, New Slide), the slide in
@@ -1079,17 +1097,18 @@ component, hook and function it is made of, and the R side.
   marks) and Print layout (the final pages Word makes); a thin zoom slider and the percent with its menu (fit width, whole page).
   Shortcuts: Ctrl+K link, Ctrl+Enter page break, Ctrl+Shift+> / < text size, Ctrl+S save now, with the editor's own (Ctrl+B/I/U,
   Ctrl+Alt+1..6 headings, Ctrl+Alt+0 body text, Ctrl+Shift+7/8 lists, Tab / Shift+Tab levels).
-- **Theme** (`cd2030.core::report_themes()`: Countdown, Ministry of Health, Minimal, Formal, then anything changed): fonts (print typefaces
+- **Theme** (the app's registered themes -- Countdown, from cd2030.core -- then `report_themes()`: Ministry of Health, Minimal, Formal, then anything changed): fonts (print typefaces
   that come with Office, serif then sans serif, only those installed: `report_fonts()`), colours, a chart palette given to each chart's series, text sizes. The theme becomes the Word file's styles.
 - **Cover page:** layouts band / full colour / photo / minimal, line above the title, title, subtitle, the country flag (downloaded once from
   flagcdn.com; left out without internet), logos, editors, date, reference.
 - **Page:** A4/Letter, portrait/landscape, margins, header and footer (fields allowed), page numbers, contents page.
 - **Blocks are descriptions, not pictures:** a chart block says what to draw (kind, indicator, level, region, year, variant, size, options).
   The component signs each chart block (`sig`, `layout.ts blockSig()`: its settings plus the theme's font, palette and page); R draws a
-  block again when its sig changes (`render_report_block()`, message `cd-report-preview`, one per event-loop turn). The kinds are
-  `cd2030.core::report_block_kinds()`; add one there (its drawing code in `.rb_draw()`) plus `lbl_rb_kind_<kind>` in shared.json.
+  block again when its sig changes (`render_report_block()`, message `cd-report-preview`, one per event-loop turn). The kinds are the
+  app's (`report_register(kinds = )`; Countdown's are `cd2030.core::report_block_kinds()`): add one there (its drawing code in
+  cd2030.core's `.rb_draw()`) plus `lbl_rb_kind_<kind>` in cd2030.core's `cd2030.json`.
 - **Saved in the dataset:** every edit is saved with `cache$set_report_project(id, project)`.
-- **Word and PDF are the same document:** `cd2030.core::export_report()` writes the Word file, then makes the PDF from it with Microsoft
+- **Word and PDF are the same document:** `export_report()` writes the Word file, then makes the PDF from it with Microsoft
   Word (Windows, through PowerShell) or LibreOffice (`report_converter()`); Word also fills in the contents page and embeds the fonts.
   Two half-width charts or pictures sit in an invisible two-column table with fixed widths, and nothing floats, so Word keeps the layout.
   Without Word or LibreOffice the PDF is printed from HTML (chromote), and the dialog says it may differ.
@@ -1100,7 +1119,7 @@ component, hook and function it is made of, and the R side.
 
 | Where | What |
 | --- | --- |
-| `apps/_shared/R/modules/reports.R` | the page module (`reports_ui()` / `reports_server()`): the list of reports, drawing previews, saving, exports |
+| `R/kit-reports.R` | the page module (`reports_ui()` / `reports_server()`): the list of reports, drawing previews, saving, exports |
 | `js/src/components/ReportStudio.tsx` | the React input the page shows: the reports home, the naming dialog, and one of the two builders |
 | `js/src/components/report/types.ts` | the data model (below) |
 | `report/ReportEditor.tsx`, `report/DeckEditor.tsx` | the two builders: documents (Word) and slide decks (PowerPoint) |
@@ -1110,7 +1129,8 @@ component, hook and function it is made of, and the R side.
 | `report/RichText.tsx` | text formatting commands, the active editor, the format painter |
 | `report/Picture.tsx`, `report/panels.tsx`, `report/dialogs.tsx`, `report/CoverText.tsx`, `report/ui.tsx` | a picture on the page; the task panes; the dialogs; a cover text; icons and small pieces |
 | `report/layout.ts`, `report/deck.ts` | page and block geometry, signatures, text helpers; slides and their layouts |
-| `cd2030.core/R/report-*.R` | drawing blocks, presets, themes, fields, Word / PowerPoint / PDF export |
+| `R/report-*.R` | the engine: blocks, themes, fields, Word / PowerPoint / PDF export, Office templates |
+| cd2030.core `R/report-countdown.R`, `R/report-preset-*.R` | Countdown's content: its kinds of chart and table and their drawing code, its standard reports, fields and theme |
 
 Every React text is a key of `texts` (the `lbl_rb_*` translations without their prefix, `cd_report_texts()`), shown with
 `t(k) = tr(texts[k], lang) || k`: a missing key shows as itself.
@@ -1119,7 +1139,7 @@ Every React text is a key of `texts` (the `lbl_rb_*` translations without their 
 
 A **report** (`RbProject`) is a design, a cover and either **blocks** (a document) or **slides** (a deck). Charts and tables
 are *descriptions* (what to draw); R draws them and sends a preview back. The same fields are documented in
-`cd2030.core/R/report-builder.R` and `report-theme.R`.
+`R/report-builder.R` and `R/report-theme.R`.
 
 | Type | Fields |
 | --- | --- |
@@ -1155,7 +1175,7 @@ Google Slides exports especially, have a plain master): a background, `decor` (l
 the `title` / `subtitle` / `body` text styles and boxes. A slide uses `title` for the title and section layouts and
 `content` otherwise (`slide.design` overrides). `BoxCanvas` draws the decor behind the items, `designedBlock()` styles a
 text item by its role where the item sets nothing itself, and new slides place their title (and body) where the file does;
-the export does the same (`.rb_designed_item()`, `.rb_deck_design()` in cd2030.core).
+the export does the same (`.rb_designed_item()`, `.rb_deck_design()` in `R/report-deck.R`).
 
 What R sends back and the builder's other types:
 
@@ -1687,7 +1707,7 @@ What they need from the editor comes through **`FlowContext`** (`FlowCtx`): `pre
 A free-layout page (block type `"canvas"`): a whole page of text boxes, charts, tables and pictures placed anywhere, made of
 `BoxCanvas` and `useBoxEditing`. A click on it edits it (the document's text loses the focus; its boxes' keys and the ribbon
 act on it); a click in the text leaves it. An empty content box offers Chart, Table (a list of kinds) and Picture.
-cd2030.core writes it as Word floating objects at the same places, on a page of its own.
+The export writes it as Word floating objects at the same places, on a page of its own.
 
 * `canvasSize(design, b?)` - `[w, h]` in inches: the text area (a little less high), or `b.h`.
 * `newCanvas(design)` - a new free page: a title across the top and an empty box under it.
@@ -1699,7 +1719,7 @@ cd2030.core writes it as Word floating objects at the same places, on a page of 
 
 `report/Picture.tsx`: a picture block, or a chart shown as a picture, drawn as the Word file will have it. It is turned,
 flipped and cropped on a canvas (once, then kept), its colours changed with CSS filters that do the same arithmetic as
-cd2030.core's `.rb_image_file()` (brightness, contrast, greyscale), with its shape, border and picture style.
+`.rb_image_file()` (`R/report-export.R`: brightness, contrast, greyscale), with its shape, border and picture style.
 
 | Prop | Meaning |
 | --- | --- |
@@ -1719,7 +1739,7 @@ from its middle.
   `maxSide` or very large (PNG, GIF and SVG stay PNG; others become JPEG on white).
 * `ImagePicker({label, className?, onPick, children?})` (`panels.tsx`) - a button that opens the file chooser (PNG, JPEG,
   GIF, SVG) without taking the editor's focus, and gives `readImage()`'s result.
-* In `layout.ts`, the same rules as cd2030.core's: `imageCrop(b)` (the crop as fractions; a tenth is always left),
+* In `layout.ts`, the same rules as R's (`R/report-builder.R`): `imageCrop(b)` (the crop as fractions; a tenth is always left),
   `imageStretch(b)`, `imageRatio(b)` (height / width once turned, cropped and stretched), `wrapOf(b)`,
   `asPicture(b, design)` (a chart as the picture it is shown as), `shownInches(b, design)`, `columnInches(b, design)`,
   `blockInches(b, design)` (as `report_block_size()`).
@@ -1835,8 +1855,8 @@ ribbon calls `pasteFormat()` on every mouse up.
 
 ### R side: module, messages, actions
 
-`apps/_shared/R/modules/reports.R`. An app turns the page on with a registry entry (`id = "reports"`, ui `reports_ui`,
-server `reports_server`; see rmncah's and vaxx's `pages.R`).
+`R/kit-reports.R`. An app turns the page on with a registry entry (`id = "reports"`, ui `reports_ui`,
+server `reports_server`; see rmncah's and vaxx's `R/pages.R`).
 
 | Function | Does |
 | --- | --- |
@@ -1845,16 +1865,17 @@ server `reports_server`; see rmncah's and vaxx's `pages.R`).
 | `cd_report_studio(inputId, i18n)` | the `ReportStudio` element, with the fonts, the field catalog, the chart schema and the texts; the rest is pushed by the server |
 | `cd_report_texts(i18n)` | every `lbl_rb_*` key as `cd_text()`, named without its prefix |
 | `cd_report_field_catalog(i18n)` | `report_field_catalog()` with its labels in every language (an indicator field: "<indicator> · latest" / "survey") |
-| `cd_report_kinds(i18n, cache)` | `report_block_kinds()` as `RbKind`s (labels `lbl_rb_kind_*`, `lbl_rb_group_*`, `lbl_rb_level_*`, `lbl_rb_var_*`, `opt_<indicator>`), with defaults (`anc4` when offered, the first level and variant, `region = "@report"` for a regional kind) |
+| `cd_report_kinds(i18n, cache)` | the registered kinds (`report_register(kinds = )`) as `RbKind`s (labels `lbl_rb_kind_*`, `lbl_rb_group_*`, `lbl_rb_level_*`, `lbl_rb_var_*`, `opt_<indicator>`), with defaults (`anc4` when offered, the first level and variant, `region = "@report"` for a regional kind) |
 | `cd_report_preview(cache, b, i18n, sig, design)` | draws one block: a chart as a 300 dpi PNG data URL with its size, legend entries and `chart_facet_info()`; a table as HTML; or the error |
 | `cd_report_thumb(cache, kind, i18n, design)` | a small (90 dpi) picture of a kind of chart, for the blocks panel |
 | `cd_report_export(session, cache, project, format, i18n, translator, message, state)` | `export_report()` with progress; a deck's `docx` becomes `pptx`, a document's `pptx` becomes `docx`; the file is kept for the download link (`<country>_<date>.<ext>`) |
 | `cd_report_final(cache, project, i18n, message)` | `report_final_pages()` at 110 dpi, sent as data URLs |
 | `cd_report_with_template(cache, project)` | a theme's Office file (`"asset:<id>"`) written to a temporary file for the export |
 | `cd_report_translator(i18n, lang)` | `list(t =, lang =)` in the report's own language (charts, tables, dates, file) |
-| `cd_report_flag(cache)`, `cd_report_regions(cache)`, `cd_report_summary(projects)`, `cd_report_group()`, `cd_report_blocks(p)`, `cd_report_is_deck(p)`, `cd_report_new_id()`, `cd_report_sig(b)`, `cd_report_key(x)` | helpers |
+| `cd_report_designs_store(cache, designs, prefix)`, `cd_report_design_asset_ids(designs)`, `cd_report_designs_files(cache, designs)` | a PowerPoint theme's slide designs: their pictures kept once in the dataset, and written out again for the export |
+| `cd_report_flag(cache)`, `cd_report_regions(cache)`, `cd_report_summary(projects)`, `cd_report_blocks(p)`, `cd_report_is_deck(p)`, `cd_report_new_id()`, `cd_report_sig(b)`, `cd_report_key(x)` | helpers |
 
-`cd_request_report(session, preset = NULL)` (`R/core/shiny.R`) opens the page with a standard report's naming dialog (a
+`cd_request_report(session, preset = NULL)` (`R/kit-shiny.R`) opens the page with a standard report's naming dialog (a
 page's Generate report button, the header's Reports button); `cd_has_reports()` says whether the app has the page.
 
 **What the server does:**
@@ -1902,34 +1923,41 @@ page's Generate report button, the header's Reports button); `cd_has_reports()` 
 The cache keeps `report_projects`, `report_assets` and `report_themes`, saved with the dataset (`set_report_project()`,
 `set_report_asset()`, `set_report_theme()`).
 
-### R side: cd2030.core functions
+### R side: the report functions
 
-All in `cd2030.core/R/` (`report-builder.R`, `report-export.R`, `report-deck.R`, `report-theme.R`, `report-text.R`,
-`report-template.R`, `chart-options-facet.R`); see their help pages for the arguments.
+The engine is this package's (`R/report-builder.R`, `report-export.R`, `report-deck.R`, `report-theme.R`, `report-text.R`,
+`report-template.R`, `report-context.R`, `chart-options-facet.R`); see their help pages for the arguments. Each takes a report
+**context** (`report_context()`), or a dataset `as_report_context()` turns into one -- cd2030.core adds the method for its
+`CacheConnection`, so a Countdown cache can be passed directly. The two rows marked (cd2030.core) are Countdown's content.
 
 | Function | Does |
 | --- | --- |
-| `report_presets(lang = "en", group)` | the standard reports, in analysis order: `list(name, description, kind, design, cover, blocks)` for a document, `slides` in place of `blocks` for a deck |
-| `report_block_kinds(group)` | the kinds of chart and table: `type`, `group`, `label`, `indicators` (`"analysis"`, a vector or NULL), `levels`, `variants`, `year`, `regional`, `tall`; sorted by analysis step |
-| `render_report_block(cache, block, i18n = NULL, design = NULL)` | draws a block: `list(type = "plot", value = <ggplot>)`, `list(type = "table", value = <flextable>)` or `list(type = "error", message)`, with the report theme, a custom title (fields filled in), the palette and the block's `options` |
+| `report_register(themes, default_theme, cover, kinds, presets, indicator_name, fields, chart_id)` | what an app's reports offer, registered once (cd2030.core does it in `.onLoad()`); later calls replace only what they give |
+| `report_context(draw, asset_get, asset_set, chart_options, fields, years, regions, flag)` | one dataset's data for the engine: how to draw a block, where pictures are kept, saved chart options, field values, years, regions, a flag |
+| `as_report_context(x)` | a generic: turns a dataset into a context (methods for `report_context` and `NULL`; apps add theirs) |
+| `report_kind(type, group, label, indicators, levels, variants, year, regional, groups, tall)` | one kind of chart or table, for `report_register(kinds = )` |
+
+| `report_presets(lang = "en", group)` (cd2030.core) | the standard reports, in analysis order: `list(name, description, kind, design, cover, blocks)` for a document, `slides` in place of `blocks` for a deck |
+| `report_block_kinds(group)` (cd2030.core) | the kinds of chart and table: `type`, `group`, `label`, `indicators` (`"analysis"`, a vector or NULL), `levels`, `variants`, `year`, `regional`, `tall`; sorted by analysis step |
+| `render_report_block(context, block, i18n = NULL, design = NULL)` | draws a block (through the context's `draw`): `list(type = "plot", value = <ggplot>)`, `list(type = "table", value = <flextable>)` or `list(type = "error", message)`, with the report theme, a custom title (fields filled in), the palette and the block's `options` |
 | `report_block_size(block, design = NULL)` | `c(width, height)` in inches: `block$box` on a slide, else from the page, `size` and whether the kind is tall; a picture from `width` and `ratio` |
 | `report_project_blocks(project)` | every block R draws: a document's blocks and its free pages' items, or a deck's items (each with `id` = the item's and `box`) |
 | `report_resolve_block(block, project, regions = NULL)` | `region = "@report"` replaced by the report's region (none: national) |
-| `report_fields(cache, project, date = Sys.Date(), lang = "en")` | the fields' values (`country`, `latest_year`, `anc4_latest`...) |
-| `report_field_catalog()` | the fields that can be inserted: `list(key, group, label)` (indicator fields also have `indicator` and `what`) |
-| `report_chart_fields(blocks, cache = NULL, i18n = NULL)` | `{chart_indicator}` and `{chart_year}` filled in from the next chart or table (a chart's own title: from itself) |
-| `export_report(cache, project, file, format, i18n, subtitle, progress, converter)` | writes the Word file of a document and makes the PDF from it with Word or LibreOffice, else from HTML in a browser; a deck goes to `export_deck()`. Returns `file` with the attribute `converter` |
-| `export_deck(cache, project, file, format = c("pptx", "pdf"), i18n, progress, converter)` | writes the PowerPoint file with officer (charts as editable drawings, tables as tables, speaker notes), on the theme's template when there is one; the PDF with PowerPoint or LibreOffice |
-| `report_final_pages(cache, project, i18n = NULL, dpi = 60, progress = NULL)` | the PDF made from the Word (or PowerPoint) file, one PNG per page: `list(pages, converter, pdf)` |
-| `report_themes()` | the built-in themes: Countdown, Ministry of Health, Minimal, Formal |
+| `report_fields(context, project, date = Sys.Date(), lang = "en")` | the fields' values (`country`, `latest_year`, `anc4_latest`...) |
+| `report_field_catalog()` | the fields that can be inserted, built-in and registered: `list(key, group, label)` (indicator fields also have `indicator` and `what`) |
+| `report_chart_fields(blocks, context = NULL, i18n = NULL)` | `{chart_indicator}` and `{chart_year}` filled in from the next chart or table (a chart's own title: from itself) |
+| `export_report(context, project, file, format, i18n, subtitle, progress, converter)` | writes the Word file of a document and makes the PDF from it with Word or LibreOffice, else from HTML in a browser; a deck goes to `export_deck()`. Returns `file` with the attribute `converter` |
+| `export_deck(context, project, file, format = c("pptx", "pdf"), i18n, progress, converter)` | writes the PowerPoint file with officer (charts as editable drawings, tables as tables, speaker notes), on the theme's template when there is one; the PDF with PowerPoint or LibreOffice |
+| `report_final_pages(context, project, i18n = NULL, dpi = 60, progress = NULL)` | the PDF made from the Word (or PowerPoint) file, one PNG per page: `list(pages, converter, pdf)` |
+| `report_themes()` | the built-in themes: Ministry of Health, Minimal, Formal (the builder shows the app's registered themes first) |
 | `report_theme_from_file(path, name = NULL)` | a theme read from an Office file (`.potx`, `.pptx`, `.dotx`, `.docx`): its colours and fonts; from Word also its heading colour, style sizes and page; from PowerPoint its title colour, background and slide size. `theme = "custom_<hash>"`, `template_kind`. Written in `report-template.R` and exported; the app's `theme_file` action calls it |
 | `report_deck_layouts(lang = NULL)` | the slide layouts: `list(id, name, items)`, with placeholders as fractions of the slide |
 | `report_slide_size(design = NULL)` | `c(w, h)` in inches: 13.333 × 7.5 (16:9) or 10 × 7.5 (4:3) |
-| `report_store_asset(cache, id, src)` | keeps a picture in the dataset (a data URL, or it downloads an `http(s)` address; at most 4000 px; other formats become PNG): `list(id, ratio, url)` |
-| `report_asset_data_url(cache, id)` | a stored picture as a data URL (`id` with or without `"asset:"`) |
+| `report_store_asset(context, id, src)` | keeps a picture in the dataset (a data URL, or it downloads an `http(s)` address; at most 4000 px; other formats become PNG): `list(id, ratio, url)` |
+| `report_asset_data_url(context, id)` | a stored picture as a data URL (`id` with or without `"asset:"`) |
 | `chart_facet_info(plot)` | how a ggplot is drawn as panels: NULL, or `list(type, ncol, nrow, scales, strip_position, panels)` |
 | `save_report_chart(rendered, block, file, dpi = 200, design = NULL)` | writes a drawn chart as SVG or PNG at the block's size |
-| `with_report_chart_options(cache, code, design = NULL)` | runs `code` with the dataset's report chart options (the default, then per type of chart) and the design's fonts |
+| `with_report_chart_options(context, code, design = NULL)` | runs `code` with the dataset's report chart options (the default, then per type of chart) and the design's fonts |
 | `report_converter()`, `report_deck_converter()` | what makes a PDF on this computer: `"word"`, `"libreoffice"` or NULL; `"powerpoint"`, `"libreoffice"` or NULL |
 
 The module also uses `report_fonts()`, `report_flag_file()`, `report_default_design()` and `report_default_cover()`.

@@ -8,6 +8,45 @@
 \description{
 The shared interface of DataSuite's Shiny apps: chart options that restyle any 'ggplot2' chart (texts, fonts, colours, axes, legend, show or hide an element), a Word-like report builder writing Word, PowerPoint and PDF files, and the Shiny and React components, page frame and navigation the apps are built from. It holds nothing specific to one app's data: an app gives it its pages, its charts and its data through small interfaces.
 }
+\details{
+An app built on datasuite.ui gives it its pages, its data and its report content through small interfaces; the
+package itself knows nothing about any app's data and never calls an app's own package. The Countdown to 2030 apps
+are the working example: cd2030.core adds the Countdown pages and report content on top of it, and each app package
+(cd2030.rmncah, cd2030.vaxx, cd2030.pooled) has a \code{run_app()} built from both.
+}
+\section{The app frame and components}{
+
+\code{\link[=app_frame]{app_frame()}} builds a whole app: the page, the sidebar and header, and the server. An app gives it a page registry
+(\code{\link[=cd_page_def]{cd_page_def()}}, \code{\link[=cd_use_pages]{cd_use_pages()}}), a nav tree (\code{\link[=cd_nav_section]{cd_nav_section()}}, \code{\link[=cd_nav_item]{cd_nav_item()}}) and a \code{data_server} returning
+its dataset. A page is a module whose UI is \code{\link[=cd_page_ui]{cd_page_ui()}}, made of cards (\code{\link[=cd_card]{cd_card()}}, \code{\link[=cd_chart_card]{cd_chart_card()}}), charts
+with their download and Customize tools (\code{\link[=cd_plot_ui]{cd_plot_ui()}}, \code{\link[=cd_plot_server]{cd_plot_server()}}), inputs, dialogs and feedback. Every
+kit function is listed in \code{?"interface-kit"}; the package README (the dataset contract, a minimal app) and
+\code{docs/COMPONENTS.md} in the repository describe each one.
+}
+
+\section{Chart options}{
+
+\code{\link[=cd_chart_options]{cd_chart_options()}} describes how a ggplot2 chart should look (texts, fonts, colours, axes, legend, grid, facets,
+marks, and showing or hiding each element) and \code{\link[=apply_chart_options]{apply_chart_options()}} applies it to a finished chart.
+\code{\link[=merge_chart_options]{merge_chart_options()}}, \code{\link[=resolve_chart_options]{resolve_chart_options()}}, \code{\link[=chart_option_fields]{chart_option_fields()}} and \code{\link[=cd_chart_type]{cd_chart_type()}} support them.
+}
+
+\section{Reports}{
+
+A report is blocks on pages with a theme and a cover, edited in the browser (the Reports page, \code{\link[=reports_ui]{reports_ui()}} /
+\code{\link[=reports_server]{reports_server()}}) and exported with \code{\link[=export_report]{export_report()}} (Word, PDF) or \code{\link[=export_deck]{export_deck()}} (PowerPoint, PDF). An app
+registers what its reports offer once with \code{\link[=report_register]{report_register()}} (kinds of chart and table, standard reports, themes,
+fields) and gives the engine one dataset's data as a \code{\link[=report_context]{report_context()}}, or through an \code{\link[=as_report_context]{as_report_context()}} method
+for its own dataset class. Themes: \code{\link[=report_themes]{report_themes()}}, \code{\link[=report_theme_from_file]{report_theme_from_file()}}; fields: \code{\link[=report_field_catalog]{report_field_catalog()}}.
+}
+
+\section{Translations}{
+
+Text is a translation key. \code{\link[=cd_translations]{cd_translations()}} merges the kit's keys, the files packages registered with
+\code{\link[=cd_register_translations]{cd_register_translations()}} and the app's own file for \code{shiny.i18n::init_i18n()}; \code{\link[=cd_use_i18n]{cd_use_i18n()}} makes the
+translator the one the components use.
+}
+
 \seealso{
 Useful links:
 \itemize{
@@ -25,4 +64,3 @@ Other contributors:
 }
 
 }
-\keyword{internal}

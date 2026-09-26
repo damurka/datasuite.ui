@@ -1,11 +1,24 @@
 # Naming conventions
 
-See also `README.md` (architecture), `docs/COMPONENTS.md` (function reference) and `docs/HOWTO.md` (recipes).
+See also `README.md` (architecture), `COMPONENTS.md` (function reference) and `HOWTO.md` (recipes).
 
-Status: **applied** to `_shared`, rmncah and vaxx. Where the table below differs, the code wins: `countdownDashboard` became `cd_page_body` and `countdownBody` became `cd_page_content` (not folded into `cd_page_ui`).
+Status: **applied** to everything: datasuite.ui (the kit), cd2030.core's Countdown UI (`R/ui-*.R`) and the app packages.
+It was written when all of this was one folder, `countdown-analytics/apps/_shared`, sourced by each app; the rules
+carried over when that folder became the datasuite.ui and cd2030.core packages. Where the tables below differ, the code
+wins: `countdownDashboard` became `cd_page_body` and `countdownBody` became `cd_page_content` (not folded into
+`cd_page_ui`).
+
+## New code
+
+Follow the rules below. In short: `snake_case`; kit functions start with `cd_`; a module is a `<stem>_ui()` /
+`<stem>_server()` pair in one file; private helpers start with a dot (`.rb_` for the report builder in both
+packages, `.ds_` for datasuite.ui's package-wide helpers, `.cd_` in cd2030.core); the chart-options and report APIs (`apply_chart_options()`, `report_*()`, `export_report()`) have no
+prefix, being called from outside Shiny too.
+
+## History: why the rules exist
 
 Originally written as a proposal, from an inventory of every function in `_shared/R` (128) and the
-app modules (~110). Today the same job is named four different ways:
+app modules (~110). At the time the same job was named four different ways:
 
 | Style today | Count | Examples |
 | --- | --- | --- |
@@ -18,8 +31,9 @@ app modules (~110). Today the same job is named four different ways:
 
 1. **One casing: `snake_case`.** It is base R and tidyverse style, and it already covers the largest group. camelCase
    only survives where Shiny itself defines the name (`renderUI`, `moduleServer`, `NS`).
-2. **One prefix: everything in `_shared` starts with `cd_`.** There is no package namespace yet, so the prefix *is*
-   the namespace. App code (`modules/`, `pages.R`, `app.R`) has no prefix.
+2. **One prefix: every kit function starts with `cd_`.** When this was written there was no package namespace, so the
+   prefix *was* the namespace; the kit kept it when it became datasuite.ui, so no app had to be renamed. App code (an
+   app package's pages, `pages.R`, `run_app()`) has no prefix.
 3. **Name = what it *is* (a noun), not what it does.** `cd_card`, `cd_button`, `cd_chip_select`. Verbs are only for
    things that act: `cd_show_dialog`, `cd_update_input`, `cd_use_i18n`, `cd_navigate_to`.
 4. **A Shiny module is a pair with the same stem: `<stem>_ui()` and `<stem>_server()`.** Never `xUI` + `xServer`,
@@ -73,7 +87,7 @@ Each page module is `<page>_ui()` / `<page>_server()` (`reportingRateUI` -> `rep
 `data_adjustment_ui`. Sub-modules follow the same rule (`coverageUI` -> `coverage_ui`), and the helper functions in
 `step_status.R` / `wizard_*` are already snake_case.
 
-## How the rename would be done
+## How the rename was done
 
 Mechanical and scripted: a name -> name table, whole-word replacement over `_shared/R`, `modules/`, `pages.R`, `app.R`,
 plus the R names quoted in comments. Then `parse()` every file, load the shared UI, build every page's UI in R and

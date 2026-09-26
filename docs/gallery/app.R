@@ -1,9 +1,12 @@
 # Component gallery: every shared component on one page, live. Used to take the screenshots in docs/COMPONENTS.md and as a
-# place to try a component out. Run it from this folder:  shiny::runApp("docs/gallery")
+# place to try a component out. Run it from the package folder:  shiny::runApp("docs/gallery")
+# (GALLERY_THEME=vaccine or pooled for the other themes; the Countdown demos need cd2030.core installed)
 #
 # It is not an app anyone ships: no dataset, no registry. Each block is wrapped in a `div#g-<name>` so it can be captured.
 
-pacman::p_load(shiny, shiny.react, htmltools, dplyr, purrr, openxlsx, reactable, ggplot2, rlang, shiny.i18n, stringr, update = FALSE)
+library(shiny)
+library(ggplot2)
+library(shiny.i18n)
 
 library(datasuite.ui)
 # Two demos are Countdown's (cd2030.core): shown when it is installed, else a note in their place

@@ -1,94 +1,109 @@
-# Shared Countdown UI (`apps/_shared`)
+# How an app is put together
 
-> **Moved (2026-09):** this was the README of `countdown-analytics/apps/_shared`. The interface kit it describes is now
-> this package (datasuite.ui: `R/kit-*.R`, `inst/www`, `js/`), and the Countdown pages, wizard, filters and `cd_app()`
-> are in cd2030.core (`R/ui-*.R`). Apps attach both packages instead of sourcing `_shared/load.R`. The folder map below
-> still shows the old layout.
-
-
-The UI that every Countdown Shiny app is built from: **rmncah**, **vaxx** and **pooled** today, and any app on a custom
-indicator group tomorrow. An app loads it, says what is particular to it, and writes only its own analysis pages.
+The architecture behind the package README: how an app is built on datasuite.ui, what the Countdown layer
+(cd2030.core) adds on top, and where each piece lives. The Countdown apps (cd2030.rmncah, cd2030.vaxx, cd2030.pooled)
+are the working examples.
 
 | Read this | For |
 | --- | --- |
-| this file | how it fits together: folders, an app's anatomy, start-up order, config, themes, translations |
-| [`docs/COMPONENTS.md`](docs/COMPONENTS.md) | reference: every component, its arguments, an example, related pieces and a screenshot (images in `docs/img/`) |
-| [`docs/gallery`](docs/gallery/app.R) | a live page showing every component: `shiny::runApp("apps/_shared/docs/gallery")` (`GALLERY_THEME=vaccine\|pooled` for the other themes) |
-| [`docs/HOWTO.md`](docs/HOWTO.md) | recipes (add a page, a chart, an app, a component, a translation key) and the gotchas we hit |
+| [`../README.md`](../README.md) | what the package is, a minimal app, the dataset contract, developing and releasing |
+| this file | an app's anatomy, the page registry, a page module, the Countdown layer, themes, translations |
+| [`COMPONENTS.md`](COMPONENTS.md) | reference: every component, its arguments, an example, related pieces and a screenshot (images in `img/`) |
+| [`gallery`](gallery/app.R) | a live page showing every component: `shiny::runApp("docs/gallery")` from the package folder (`GALLERY_THEME=vaccine\|pooled` for the other themes) |
+| [`HOWTO.md`](HOWTO.md) | recipes (add a page, a chart, an app, a component, a translation key) and the gotchas we hit |
 | [`CONVENTIONS.md`](CONVENTIONS.md) | naming rules (snake_case, `cd_` prefix, `<stem>_ui/_server` pairs) |
 
 ## The idea in one paragraph
 
-An app is a Shiny app whose `app.R` (1) loads `cd2030.core` and the shared UI, (2) pins its indicator group and sets its
-config, (3) sources its own modules and `pages.R` (the *page registry*), (4) builds a translator and a nav tree and (5)
-calls `cd_app()`. Everything visible -- header, sidebar, cards, buttons, filters, charts with their download tools, the
-Load Data wizard -- comes from here, as R functions that render React components (`js/src`) or plain `cd-` styled HTML.
-There is no Bootstrap, AdminLTE or shinydashboard anywhere.
+An app is an R package whose `run_app()` (1) sets what is particular to it, (2) builds a translator, (3) lists its
+pages in a *page registry*, (4) builds its nav tree and (5) returns the app from `app_frame()` -- for a Countdown app,
+from cd2030.core's `cd_app()`, which is `app_frame()` with the Introduction and Load Data screens. Everything visible
+-- header, sidebar, cards, buttons, charts with their download tools, the Reports page -- comes from datasuite.ui, as
+R functions that render React components (`js/src`) or plain `cd-` styled HTML. There is no Bootstrap, AdminLTE or
+shinydashboard anywhere.
 
-## Folder map
+## Three layers
+
+| Layer | Package | Holds |
+| --- | --- | --- |
+| the kit | **datasuite.ui** | `app_frame()`, the page registry, components, cards, charts with their tools, chart options, the Customize panel, the report engine and the Reports page, translations machinery (`R/kit-*.R`, `R/chart-options*.R`, `R/report-*.R`, `inst/www`, `js/src`) |
+| the Countdown layer | **cd2030.core** | the analysis, and every page and piece the Countdown apps share: `cd_app()`, the Load Data wizard, the filters (admin level, indicator, denominator, palette, population, years), the nav sections, the scoped and tabbed pages, the data quality / denominator / coverage / equity pages, `cd_cfg()`, the report content (kinds, standard reports, fields) registered with `report_register()` (`R/ui-*.R`, `R/report-countdown.R`, `R/report-preset-*.R`) |
+| an app | **cd2030.rmncah**, **cd2030.vaxx**, **cd2030.pooled** | `run_app()`, the app's own pages (`R/page-*.R`), its registry (`R/pages.R`), its Load Data screen, its translations (`inst/translation/translation.json`) and introduction (`inst/intro`) |
+
+The rule: datasuite.ui never calls cd2030.core, and cd2030.core never calls an app. Something Countdown-specific
+reaches the kit only through an argument or a registration (`page_header_extra`, `report_register()`,
+`cd_register_translations()`, a dataset member).
+
+## This package's files
 
 ```
-apps/
-  _shared/                 <- this folder, laid out like an R package (R/ + www/) so it can be promoted to one later
-    load.R                 cd_ui_load(): sources every R/**/*.R, registers the "cd-ui" resource path
-    R/
-      core/                app.R (cd_app), assets, config (cd_cfg), i18n, small Shiny helpers
-      components/          R wrappers for the React components: buttons, inputs, files, dialogs, feedback, message box
-      layout/              page + card builders, page registry, scoped pages, sidebar/header shell, nav sections, tabs, loader
-      charts/              plot and table cards with their download tools, download button, chart options, Excel helpers
-      filters/             admin level, indicator, denominator, palette, population, years
-      actions/             Get help, Add notes, Generate report, Download report
-      wizard/              the Load Data wizard (step rail, upload, data quality, national rates, survey/shapefile, mapping)
-      modules/             page modules that are identical for every indicator group (see "Shared modules")
-    translation/shared.json  the translation keys the apps have in common
-    www/                   cd-ui.css, fonts, the built React bundle (cd-react/), logo, i18n-fix.js
-    docs/                  COMPONENTS.md, HOWTO.md
-  rmncah/  vaxx/  pooled/  the apps: app.R, pages.R (not pooled), modules/, translation/translation.json, help/
-js/                        React/TypeScript source of the components; `npm run build` writes www/cd-react
+R/
+  kit-app.R               app_frame(): the whole app
+  kit-page.R  kit-shell.R kit-header.R    page, screens, sidebar, app bar, page header
+  kit-pages.R             the page registry (cd_page_def, cd_use_pages, cd_page_ui, cd_pages_ui, cd_pages_server)
+  kit-card.R  kit-tab-panes.R             cards, tab strips and panes
+  kit-buttons.R kit-inputs.R kit-files.R kit-dialogs.R kit-feedback.R kit-message-box.R    components
+  kit-plot.R  kit-plot-downloads.R  kit-download-button.R  kit-excel.R                     charts, downloads, Excel
+  kit-chart-schema.R kit-chart-state.R kit-chart-tools.R kit-chart-layout.R                the Customize panel
+  kit-help.R  kit-notes.R                 Get help, Add notes
+  kit-reports.R           the Reports page
+  kit-wizard.R kit-startup-loader.R       a wizard's step rail, the loading screen
+  kit-i18n.R  kit-shiny.R  kit-assets.R   translations, Shiny helpers, CSS/JS dependencies
+  kit-docs.R              the help topic that lists the kit's functions (?`interface-kit`)
+  chart-options*.R        chart options: build, merge, apply to a ggplot
+  report-*.R              the report engine: blocks, themes, fields, Word/PowerPoint/PDF export, templates
+inst/
+  www/                    cd-ui.css, fonts, the built React bundle (cd-react/), logo, i18n-fix.js; served at cd-ui/
+  translation/ui.json     the kit's translation keys
+  rmd/report-template.docx  the Word template reports are written into
+js/                       React/TypeScript source of the components; `npm run build` writes inst/www/cd-react
+tests/testthat/           chart options and the report builder
+docs/                     this folder (not part of the built package)
 ```
 
-## An app's anatomy (`app.R`)
+## An app's anatomy (`run_app()`)
 
-The order matters; this is what `apps/vaxx/app.R` does, in order:
+The order matters. This is what cd2030.rmncah's `R/run_app.R` does:
 
 ```r
-options(shiny.maxRequestSize = ..., future.globals.maxSize = ...)
-options(cd2030.selected_group = "vaccine")
-library(cd2030.core); pacman::p_load(shiny, shiny.react, ...)
+run_app <- function(selected_file = Sys.getenv("CDSUITE_SHINY_SELECTED_FILE", unset = NA),
+                    language = Sys.getenv("CDSUITE_SHINY_LOCALE", unset = "en"),
+                    app_name = Sys.getenv("CDSUITE_SHINY_NAME", unset = "RMNCAH"), app_version = ..., ...) {
+  options(shiny.maxRequestSize = ..., future.globals.maxSize = ...)
 
-source("../_shared/load.R"); cd_ui_load()          # 1. the shared UI
+  options(cd2030.selected_group = "rmncah", cd2030.app_group = "rmncah")   # 1. pin the indicator group (below)
+  set_selected_group("rmncah")
+  options(cd2030.config = list(...))                  #    per-app settings for the shared pages (see "Config")
+  rmncah_wizard_options()                             #    the Load Data wizard's fields
+  options(cd2030.help_dir = system.file("intro", package = "cd2030.rmncah"))
 
-options(cd2030.app_group = "vaccine")              # 2. pin the group (see "The indicator group" below)
-set_selected_group("vaccine")
-options(cd2030.config = list(...))                 #    per-app settings for the shared modules (see "Config")
+  i18n <- shiny.i18n::init_i18n(translation_json_path =                     # 2. the translator
+    cd_translations(system.file("translation", "translation.json", package = "cd2030.rmncah")))
+  i18n$set_translation_language(language); cd_use_i18n(i18n)
 
-source("modules/0_upload_data.R")                  # 3. the app's OWN modules, then the registry
-source("pages.R")
+  pages <- rmncah_pages(); cd_use_pages(pages)        # 3. the page registry (R/pages.R)
 
-app_name <- Sys.getenv("CDSUITE_SHINY_NAME", "Vaxx") ...   # 4. environment from DataSuite
-i18n <- init_i18n(translation_json_path = cd_translations("translation/translation.json"))
-i18n$set_translation_language(language); cd_use_i18n(i18n)
+  nav <- list(cd_nav_start(), cd_nav_quality(), cd_nav_denominators(),     # 4. the nav tree
+              cd_nav_section("lbl_nav_section_analysis", cd_nav_national(), cd_nav_subnational(), ...),
+              cd_nav_section("lbl_nav_section_output", cd_nav_item("title_reports", tabName = "reports", ...)))
 
-cd_nav_sections <- list(cd_nav_start(), cd_nav_quality(), cd_nav_denominators(),
-                        cd_nav_section("lbl_nav_section_analysis", cd_nav_national(), cd_nav_subnational()))
-
-cd_app(app_name = app_name, app_version = app_version, theme = "vaccine",      # 5. build and return the app
-       nav_sections = cd_nav_sections, registry = cd_page_registry,
-       i18n = i18n, language = language, selected_file = selected_file)
+  cd_app(app_name = app_name, app_version = app_version, theme = "rmncah",  # 5. build and return the app
+         nav_sections = nav, registry = pages, i18n = i18n, language = language, selected_file = selected_file,
+         upload_ui = upload_data_ui, upload_server = upload_data_server)
+}
 ```
 
-`cd_app()` returns the `shinyApp`, so it must be the last expression of `app.R`. If you source `app.R` in a test script,
-wrap the call in `invisible()` -- at top level R auto-prints the app object, which *runs* it.
+`run_app()` returns the `shinyApp` object; printing it (or `shiny::runApp()`) runs it. DataSuite runs an app from a
+folder whose `app.R` is one line, `cd2030.rmncah::run_app()`, and passes its settings in environment variables:
+`CDSUITE_SHINY_NAME`, `_VERSION`, `_LOCALE`, and `CDSUITE_SHINY_SELECTED_FILE` (a dataset for rmncah/vaxx, a folder of
+`.rds` files for pooled). Given as arguments instead, they work from an R console.
 
-The environment variables come from DataSuite: `CDSUITE_SHINY_NAME`, `_VERSION`, `_LOCALE`, and
-`CDSUITE_SHINY_SELECTED_FILE` (a dataset path for rmncah/vaxx, a folder of `.rds` files for pooled).
+### The page registry (`R/pages.R` of an app)
 
-### The page registry (`pages.R`)
-
-One `cd_page_def()` per analysis page; `cd_page_registry` is a list of them and `cd_use_pages(cd_page_registry)` makes it
-available to `cd_page_ui()`. From it `cd_app()` builds the page containers (`cd_pages_ui`) and starts every page server
-(`cd_pages_server`), including each page's header (title, help, report button). A page module never repeats its title,
-section or help chapter.
+One `cd_page_def()` per analysis page; the registry is a list of them and `cd_use_pages()` makes it available to
+`cd_page_ui()`. From it `app_frame()` builds the page containers (`cd_pages_ui()`) and starts every page server
+(`cd_pages_server()`), including each page's header (title, help, report button). A page module never repeats its
+title, section or help chapter.
 
 ```r
 cd_page_def(
@@ -98,11 +113,15 @@ cd_page_def(
   section = "title_nav_national_analysis",
   subtitle = "sub_target_national",
   help = c("national-global-coverage"),   # c(help chapter, optional section) for the Get help button
-  denominator = TRUE,                     # show the "Denominator" row under the header
+  denominator = TRUE,                     # show the "Denominator" row under the header (cd2030.core's header extra)
   report = NULL,                          # key the report/notes buttons use, if the page has one
+  server_args = list(),                   # extra arguments after (id, cache, i18n)
   active = TRUE                           # FALSE: the server is not given `active` (see below)
 )
 ```
+
+The shared Countdown pages (`reporting_rate_ui`, `national_coverage_ui`, ...) are exported by cd2030.core; an app's
+registry names them next to its own pages.
 
 ### A page module
 
@@ -124,14 +143,20 @@ my_page_server <- function(id, cache, i18n, active = reactive(TRUE)) {
 }
 ```
 
-* `cache` is a reactive holding the `cd2030.core` `CacheConnection` for the loaded dataset (`NULL` until one is loaded).
+* `cache` is a reactive holding the dataset (for Countdown apps the cd2030.core `CacheConnection`; `NULL` until one
+  is loaded). What the kit itself needs from it is the [dataset contract](../README.md#the-dataset-contract).
 * `active` is TRUE once the page has been opened *with data loaded* and **stays TRUE** afterwards (`page_is()` in
-  `cd_app()`); a new dataset resets it. Gate any real computation on `req(active())`, or every page computes on start-up.
+  `app_frame()`); a new dataset resets it. Gate any real computation on `req(active())`, or every page computes on
+  start-up.
 
-## Config: what differs per app (`cd_cfg`)
+In an app package a page module is a file `R/page-<n>_<name>.R`; it is not exported (only `run_app()` is).
 
-The shared modules hold nothing specific to a group. Each app sets one list and the modules read it with
-`cd_cfg("key", default)` (`R/core/config.R` documents the keys):
+## The Countdown layer (cd2030.core)
+
+### Config: what differs per app (`cd_cfg`)
+
+The shared Countdown pages hold nothing specific to one indicator group. Each app sets one list and the pages read it
+with `cd_cfg("key", default)` (cd2030.core `R/ui-core-config.R` documents the keys):
 
 | Key | Meaning |
 | --- | --- |
@@ -145,53 +170,62 @@ The shared modules hold nothing specific to a group. Each app sets one list and 
 | `consistency_pairs` | `list(c("anc1","penta1"), ...)`: one Consistency Checks tab per pair |
 | `has_maternal` | does the group have a maternal denominator |
 
-Other app-level options read by the shared code: `cd2030.default_indicators` (tabs of pages that pass no list; a vector
-or a function such as `get_analysis_indicators`), `cd2030.denominator_choices` (denominator chip options),
-`cd2030.wizard` (the Load Data wizard, see `R/wizard/wizard-config.R`).
+Other app-level options read by the shared code: `cd2030.default_indicators` (tabs of pages that pass no list; a
+vector or a function such as `get_analysis_indicators`), `cd2030.denominator_choices` (denominator chip options),
+`cd2030.wizard` (the Load Data wizard, cd2030.core `R/ui-wizard-wizard-config.R`), `cd2030.help_dir` (the folder of
+the Introduction page's markdown, one file per language).
 
-## The indicator group -- read this before touching loading code
+### The indicator group -- read this before touching loading code
 
 `cd2030.core` keeps **one indicator group for the whole R session** (`set_selected_group()`), and that value wins over
-`options(cd2030.selected_group)`. It is changed by loading any dataset (each remembers the group it was built for). So an
-app started after another in the same R session, or a saved dataset built for another group, would silently run on the
-wrong group (e.g. vaxx showing OPD). Therefore:
+`options(cd2030.selected_group)`. It is changed by loading any dataset (each remembers the group it was built for). So
+an app started after another in the same R session, or a saved dataset built for another group, would silently run on
+the wrong group (e.g. vaxx showing OPD). Therefore:
 
-* `app.R` calls `set_selected_group()` explicitly and stores `options(cd2030.app_group)`, which loading cannot change.
+* `run_app()` calls `set_selected_group()` explicitly and stores `options(cd2030.app_group)`, which loading cannot
+  change.
 * The wizard reads `cd_wizard_indicator_group()` (the app's group), re-asserts it before every load, and refuses a
   dataset built for a different group (`cd_wizard_check_group()`).
 * Saved copies are `<file>_<group>.rds` (`cd_saved_copy_name()`), so rmncah and vaxx can open the same source file.
 
-## Shared modules (`R/modules/`)
+### Shared pages (cd2030.core `R/ui-page-*.R`)
 
-Page modules that were identical in rmncah and vaxx, or differed only by an indicator list: outlier detection, reporting
-rate, completeness, consistency checks, overall score, remove years, adjustment, denominator assessment/selection,
-coverage, target, inequality (+ map), equity, and the national/sub-national wrappers. They are sourced by `cd_ui_load()`
-like everything else; an app's `pages.R` just names them. Anything genuinely group-specific (rmncah's mortality,
-utilization, health-system and Bayesian pages, each app's upload-data module) stays in that app's `modules/`.
+Page modules identical in rmncah and vaxx, or differing only by an indicator list: outlier detection, reporting rate,
+completeness, consistency checks, overall score, remove years, adjustment, denominator assessment/selection, coverage,
+target, inequality (+ map), equity, and the national/sub-national wrappers. An app's registry just names them.
+Anything genuinely group-specific (rmncah's mortality, utilization, health-system and Bayesian pages, each app's
+upload-data screen) stays in that app's package.
 
 ## Themes
 
-`cd_app(theme = ...)` puts `cd-theme-<name>` on `<body>`; `www/cd-ui.css` (last block, "App themes") re-declares the
-five primary-colour tokens (`--cd-primary`, `-hover`, `-rgb`, `-ink`, `-tint`). Default (no class) is rmncah maroon;
-`"vaccine"` is blue, `"pooled"` is green. Components only read the tokens, so a new theme is one CSS block.
+`app_frame(theme = ...)` puts `cd-theme-<name>` on `<body>`; `inst/www/cd-ui.css` (last block, "App themes")
+re-declares the five primary-colour tokens (`--cd-primary`, `-hover`, `-rgb`, `-ink`, `-tint`). Default (no class) is
+rmncah maroon; `"vaccine"` is blue, `"pooled"` is green. Components only read the tokens, so a new theme is one CSS
+block.
 
 ## Translations
 
-Text is never written into a component: it is a translation key. Translations are layered:
-`translation/shared.json` (keys the apps have in common) is merged with the app's own `translation/translation.json`
-(its extras; it may override a shared key) by `cd_translations()`, which returns a temporary merged file for
-`shiny.i18n::init_i18n()`. Add a key used by more than one app to `shared.json`, an app-only key to that app's file.
-React components get every language at once (`cd_text()` -> `{en, fr, pt}`) and re-render themselves on a language
-change (one `cd-lang` message, `cd_set_language()`); plain HTML text uses `i18n$t()` and the `usei18n()` DOM rescan.
+Text is never written into a component: it is a translation key. Translations are layered, and `cd_translations()`
+merges them into one temporary file for `shiny.i18n::init_i18n()`:
+
+1. `inst/translation/ui.json` of this package: the kit's own keys;
+2. files registered with `cd_register_translations()` -- cd2030.core registers `inst/translation/cd2030.json` (keys
+   the Countdown pages and apps have in common) when it loads;
+3. the app's own `inst/translation/translation.json` (its extras; it may override any key).
+
+Add a key to the layer that uses it: a kit component's text to `ui.json`, a shared Countdown page's to cd2030.core's
+`cd2030.json`, an app-only key to that app's file. React components get every language at once (`cd_text()` ->
+`{en, fr, pt}`) and re-render themselves on a language change (one `cd-lang` message, `cd_set_language()`); plain HTML
+text uses `i18n$t()` and the `usei18n()` DOM rescan.
 
 ## Building the React components
 
-Source is `../../js/src`; `npm run build` in `js/` (type-check + webpack) writes `www/cd-react/cd-react.js`, which is
-committed so running an app needs no Node. See `docs/HOWTO.md` -> "Add a React component".
+Source is `js/src`; `npm run build` in `js/` (type-check + webpack) writes `inst/www/cd-react/cd-react.js`, which is
+committed so running an app needs no Node. See `HOWTO.md` -> "Add a React component".
 
 ## Checking a change
 
-There is no test suite for the UI; this is what we do (see `docs/HOWTO.md` -> "Verifying a change"): source each `app.R`
-(with `invisible()`), build every registry page's UI and start its server with `testServer()`, run
-`codetools::checkUsage()` for undefined functions, start the app and fetch `/`, and click through the affected pages
-in a browser with a real dataset.
+`devtools::test()` and `devtools::check()` cover chart options and the report builder. The rest of the UI is checked
+by building and running an app (see `HOWTO.md` -> "Verifying a change"): build every registry page's UI and start its
+server with `testServer()`, start the app and fetch `/`, and click through the affected pages in a browser with a real
+dataset.
