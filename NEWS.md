@@ -1,3 +1,11 @@
+# datasuite.ui 0.3.2
+
+* Reference documents for a dataset: the Reports page has a "Reference documents" card to add, list and remove the
+  files the AI reads as context (reports, strategies, survey reports, notes), kept in the dataset's analysis folder
+  `documents/` (`ds_documents_dir()`, `ds_documents_list()`, `ds_documents_add()`, `ds_documents_remove()`,
+  `documents_card_ui()` / `documents_card_server()`). PDF, Word, PowerPoint, Excel, CSV and text files; a name
+  already there becomes "name (2)". Translations in English, French and Portuguese.
+
 # datasuite.ui 0.3.1
 
 * The "soft" picture style on a circle or rounded picture draws its smaller shape directly instead of shrinking the

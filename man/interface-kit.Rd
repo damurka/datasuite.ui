@@ -151,6 +151,12 @@
 \alias{reports_server}
 \alias{reports_ui}
 \alias{ROW_HEIGHT_PX}
+\alias{documents_card_ui}
+\alias{documents_card_server}
+\alias{ds_documents_dir}
+\alias{ds_documents_list}
+\alias{ds_documents_add}
+\alias{ds_documents_remove}
 \title{The interface kit: components, page frame, charts and the Reports page}
 \description{
 Exported for the apps built on this package; their arguments and use are described in the code and in the

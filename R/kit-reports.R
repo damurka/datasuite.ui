@@ -19,6 +19,8 @@ reports_ui <- function(id, i18n) {
   cd_page_ui(
     id, i18n,
     cd_report_studio(ns("studio"), i18n),
+    # the dataset's reference documents: context the AI reads for reports (kit-documents.R)
+    documents_card_ui(ns("documents"), i18n),
     # the file a download writes is served through this (hidden) link's handler
     div(style = "display: none", downloadLink(ns("file"), ""))
   )
@@ -150,6 +152,7 @@ cd_report_summary <- function(projects) {
 
 reports_server <- function(id, cache, i18n, active = reactive(TRUE)) {
   moduleServer(id, function(input, output, session) {
+    documents_card_server("documents", i18n)
     studio_id <- session$ns("studio")
     state <- reactiveValues(open = NULL, project = NULL, file = NULL, file_name = NULL)
     drawn <- new.env(parent = emptyenv())   # block id -> signature already sent

@@ -29,6 +29,7 @@
 #' @aliases cd_table_toolbar cd_tag_assert cd_text cd_text_area cd_tooltip cd_translations
 #' @aliases cd_update_input cd_update_tab_panes cd_upload_zone_texts cd_use_i18n cd_use_pages cd_wizard_steps
 #' @aliases CHART_FIELDS CHART_FONTS CHART_PANEL_FIELDS CHART_TABS MANY_CATEGORIES print.cd_chart_options
-#' @aliases reports_server reports_ui ROW_HEIGHT_PX
+#' @aliases reports_server reports_ui ROW_HEIGHT_PX documents_card_ui documents_card_server
+#' @aliases ds_documents_dir ds_documents_list ds_documents_add ds_documents_remove
 NULL
 

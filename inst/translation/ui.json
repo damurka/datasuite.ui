@@ -5609,6 +5609,48 @@
       "en": "Indicators of the charts below",
       "fr": "Indicateurs des graphiques ci-dessous",
       "pt": "Indicadores dos gráficos abaixo"
+    },
+    {
+      "key": "lbl_docs_title",
+      "en": "Reference documents",
+      "fr": "Documents de référence",
+      "pt": "Documentos de referência"
+    },
+    {
+      "key": "lbl_docs_subtitle",
+      "en": "Reports, strategies, survey reports or notes the AI can read for context and compare with the results. Kept in this dataset's documents folder.",
+      "fr": "Rapports, stratégies, rapports d'enquête ou notes que l'IA peut lire pour le contexte et comparer aux résultats. Conservés dans le dossier documents de ce jeu de données.",
+      "pt": "Relatórios, estratégias, relatórios de inquérito ou notas que a IA pode ler para contexto e comparar com os resultados. Guardados na pasta documents deste conjunto de dados."
+    },
+    {
+      "key": "btn_docs_add",
+      "en": "Add documents",
+      "fr": "Ajouter des documents",
+      "pt": "Adicionar documentos"
+    },
+    {
+      "key": "btn_docs_remove",
+      "en": "Remove",
+      "fr": "Retirer",
+      "pt": "Remover"
+    },
+    {
+      "key": "lbl_docs_empty",
+      "en": "No documents yet. Add PDF, Word, PowerPoint, Excel, CSV or text files.",
+      "fr": "Aucun document pour l'instant. Ajoutez des fichiers PDF, Word, PowerPoint, Excel, CSV ou texte.",
+      "pt": "Ainda não há documentos. Adicione ficheiros PDF, Word, PowerPoint, Excel, CSV ou texto."
+    },
+    {
+      "key": "lbl_docs_unavailable",
+      "en": "Open this dataset in DataSuite to add documents.",
+      "fr": "Ouvrez ce jeu de données dans DataSuite pour ajouter des documents.",
+      "pt": "Abra este conjunto de dados no DataSuite para adicionar documentos."
+    },
+    {
+      "key": "msg_docs_added",
+      "en": "%d document(s) added.",
+      "fr": "%d document(s) ajouté(s).",
+      "pt": "%d documento(s) adicionado(s)."
     }
   ]
 }
