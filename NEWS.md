@@ -1,3 +1,7 @@
+# datasuite.ui 0.3.3
+
+* Portuguese: the interface reads as Portuguese is written in Mozambique and Angola (European norm) instead of Brazilian Portuguese: "ficheiro", "Transferir", "A carregar", "Repor predefinição" and so on.
+
 # datasuite.ui 0.3.2
 
 * Reference documents for a dataset: the Reports page has a "Reference documents" card to add, list and remove the

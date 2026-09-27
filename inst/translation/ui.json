@@ -34,7 +34,7 @@
       "key": "msg_downloading",
       "en": "Downloading...",
       "fr": "Téléchargement en cours...",
-      "pt": "Baixando..."
+      "pt": "A transferir..."
     },
     {
       "key": "msg_global_none",
@@ -52,19 +52,19 @@
       "key": "btn_global_download",
       "en": "Download",
       "fr": "Télécharger",
-      "pt": "Baixar"
+      "pt": "Transferir"
     },
     {
       "key": "btn_global_download_plot",
       "en": "Download Plot",
       "fr": "Télécharger le graphique",
-      "pt": "Baixar Gráfico"
+      "pt": "Transferir Gráfico"
     },
     {
       "key": "btn_global_download_data",
       "en": "Download Data",
       "fr": "Télécharger les données",
-      "pt": "Baixar Dados"
+      "pt": "Transferir Dados"
     },
     {
       "key": "msg_global_select_region",
@@ -76,43 +76,43 @@
       "key": "err_global_invalid_status",
       "en": "Invalid status. Choose from 'info', 'success', 'error', or 'warning'.",
       "fr": "Statut invalide. Choisissez parmi 'info', 'success', 'error' ou 'warning'.",
-      "pt": "Status inválido. Escolha entre 'info', 'success', 'error' ou 'warning'."
+      "pt": "Estado inválido. Escolha entre 'info', 'success', 'error' ou 'warning'."
     },
     {
       "key": "msg_upload_awaiting",
       "en": "Awaiting file upload...",
       "fr": "En attente du téléchargement du fichier...",
-      "pt": "Aguardando o carregamento do arquivo..."
+      "pt": "A aguardar o carregamento do ficheiro..."
     },
     {
       "key": "title_msg_waiting",
       "en": "Waiting for input",
       "fr": "En attente",
-      "pt": "Aguardando"
+      "pt": "A aguardar"
     },
     {
       "key": "btn_upload_save_mapping",
       "en": "Save Mapping",
       "fr": "Enregistrer la cartographie",
-      "pt": "Salvar Mapeamento"
+      "pt": "Guardar Mapeamento"
     },
     {
       "key": "btn_upload_browse_drop",
       "en": "Browse or drop",
       "fr": "Parcourir ou déposer",
-      "pt": "Procurar ou soltar"
+      "pt": "Procurar ou largar"
     },
     {
       "key": "btn_upload_browse_drop_folder",
       "en": "Browse or drop a folder",
       "fr": "Parcourir ou déposer un dossier",
-      "pt": "Procurar ou soltar uma pasta"
+      "pt": "Procurar ou largar uma pasta"
     },
     {
       "key": "lbl_upload_replace",
       "en": "Click or drop to replace",
       "fr": "Cliquer ou déposer pour remplacer",
-      "pt": "Clique ou solte para substituir"
+      "pt": "Clique ou largue para substituir"
     },
     {
       "key": "lbl_upload_reset",
@@ -190,19 +190,19 @@
       "key": "lbl_map_save_anyway_q",
       "en": "Save anyway?",
       "fr": "Enregistrer quand même ?",
-      "pt": "Salvar mesmo assim?"
+      "pt": "Guardar mesmo assim?"
     },
     {
       "key": "lbl_map_review",
       "en": "Review",
       "fr": "Revoir",
-      "pt": "Revisar"
+      "pt": "Rever"
     },
     {
       "key": "lbl_map_save_anyway",
       "en": "Save anyway",
       "fr": "Enregistrer quand même",
-      "pt": "Salvar mesmo assim"
+      "pt": "Guardar mesmo assim"
     },
     {
       "key": "btn_doc_add_notes",
@@ -238,7 +238,7 @@
       "key": "title_doc_enter_notes",
       "en": "Enter your notes or observations:",
       "fr": "Entrez vos notes ou observations :",
-      "pt": "Insira suas notas ou observações:"
+      "pt": "Introduza as suas notas ou observações:"
     },
     {
       "key": "msg_doc_add",
@@ -256,7 +256,7 @@
       "key": "btn_doc_save",
       "en": "Save",
       "fr": "Enregistrer",
-      "pt": "Salvar"
+      "pt": "Guardar"
     },
     {
       "key": "btn_doc_include_page",
@@ -280,19 +280,19 @@
       "key": "err_doc_eval_params",
       "en": "Error evaluating parameters. Please check your input.",
       "fr": "Erreur lors de l’évaluation des paramètres. Veuillez vérifier votre saisie.",
-      "pt": "Erro ao avaliar os parâmetros. Por favor, verifique sua entrada."
+      "pt": "Erro ao avaliar os parâmetros. Verifique os dados introduzidos."
     },
     {
       "key": "msg_doc_saved",
       "en": "Documentation saved successfully!",
       "fr": "Documentation enregistrée avec succès !",
-      "pt": "Documentação salva com sucesso!"
+      "pt": "Documentação guardada com sucesso!"
     },
     {
       "key": "err_doc_save_failed",
       "en": "Failed to save documentation. Please try again.",
       "fr": "Échec de l’enregistrement de la documentation. Veuillez réessayer.",
-      "pt": "Falha ao salvar a documentação. Por favor, tente novamente."
+      "pt": "Falha ao guardar a documentação. Tente novamente."
     },
     {
       "key": "btn_report_download",
@@ -322,7 +322,7 @@
       "key": "lbl_chip_reset",
       "en": "Reset",
       "fr": "Réinitialiser",
-      "pt": "Redefinir"
+      "pt": "Repor"
     },
     {
       "key": "lbl_chip_search",
@@ -364,19 +364,19 @@
       "key": "lbl_chart_reset",
       "en": "Reset",
       "fr": "Réinitialiser",
-      "pt": "Redefinir"
+      "pt": "Repor"
     },
     {
       "key": "lbl_chart_reset_all",
       "en": "Reset all labels",
       "fr": "Réinitialiser tous les libellés",
-      "pt": "Redefinir todos os rótulos"
+      "pt": "Repor todos os rótulos"
     },
     {
       "key": "lbl_chart_labels_note",
       "en": "Applies to this chart and its image download. Edited text is not translated.",
       "fr": "S'applique à ce graphique et à son image téléchargée. Le texte modifié n'est pas traduit.",
-      "pt": "Aplica-se a este gráfico e à imagem descarregada. O texto editado não é traduzido."
+      "pt": "Aplica-se a este gráfico e à imagem transferida. O texto editado não é traduzido."
     },
     {
       "key": "lbl_chart_labels_unavailable",
@@ -1036,13 +1036,13 @@
       "key": "lbl_style_f_panel_border",
       "en": "Plot area border",
       "fr": "Bordure de la zone de tracé",
-      "pt": "Borda da área do gráfico"
+      "pt": "Limite da área do gráfico"
     },
     {
       "key": "lbl_style_f_panel_border_color",
       "en": "Border colour",
       "fr": "Couleur de la bordure",
-      "pt": "Cor da borda"
+      "pt": "Cor do limite"
     },
     {
       "key": "lbl_style_f_background_color",
@@ -1288,7 +1288,7 @@
       "key": "lbl_style_c_grey",
       "en": "Grey (standard)",
       "fr": "Gris (standard)",
-      "pt": "Cinza (padrão)"
+      "pt": "Cinzento (padrão)"
     },
     {
       "key": "lbl_style_c_minimal",
@@ -1732,7 +1732,7 @@
       "key": "lbl_rb_download",
       "en": "Download",
       "fr": "Télécharger",
-      "pt": "Descarregar"
+      "pt": "Transferir"
     },
     {
       "key": "lbl_rb_blocks",
@@ -2068,7 +2068,7 @@
       "key": "lbl_rb_downloadReport",
       "en": "Download report",
       "fr": "Télécharger le rapport",
-      "pt": "Descarregar relatório"
+      "pt": "Transferir relatório"
     },
     {
       "key": "lbl_rb_format",
@@ -2098,13 +2098,13 @@
       "key": "lbl_rb_downloadDocx",
       "en": "Download .docx",
       "fr": "Télécharger .docx",
-      "pt": "Descarregar .docx"
+      "pt": "Transferir .docx"
     },
     {
       "key": "lbl_rb_downloadPdf",
       "en": "Download PDF",
       "fr": "Télécharger PDF",
-      "pt": "Descarregar PDF"
+      "pt": "Transferir PDF"
     },
     {
       "key": "lbl_rb_preparing",
@@ -2116,13 +2116,13 @@
       "key": "lbl_rb_downloaded",
       "en": "Downloaded",
       "fr": "Téléchargé",
-      "pt": "Descarregado"
+      "pt": "Transferido"
     },
     {
       "key": "lbl_rb_downloadAgain",
       "en": "Download again",
       "fr": "Télécharger à nouveau",
-      "pt": "Descarregar novamente"
+      "pt": "Transferir novamente"
     },
     {
       "key": "lbl_rb_done",
@@ -2854,7 +2854,7 @@
       "key": "lbl_rb_border",
       "en": "Border",
       "fr": "Bordure",
-      "pt": "Borda"
+      "pt": "Limite"
     },
     {
       "key": "lbl_rb_caption",
@@ -2938,7 +2938,7 @@
       "key": "lbl_rb_noteBorder",
       "en": "Note border",
       "fr": "Bordure des notes",
-      "pt": "Borda das notas"
+      "pt": "Limite das notas"
     },
     {
       "key": "lbl_rb_palette",
@@ -3076,7 +3076,7 @@
       "key": "lbl_rb_flagMissing",
       "en": "The flag could not be found for this dataset (it is downloaded once; the computer running the app needs internet the first time).",
       "fr": "Le drapeau est introuvable pour ce jeu de données (il est téléchargé une fois ; l'ordinateur qui exécute l'application a besoin d'internet la première fois).",
-      "pt": "Não foi possível obter a bandeira para estes dados (é descarregada uma vez; o computador que corre a aplicação precisa de internet da primeira vez)."
+      "pt": "Não foi possível obter a bandeira para estes dados (é transferida uma vez; o computador que corre a aplicação precisa de internet da primeira vez)."
     },
     {
       "key": "lbl_rb_logos",
@@ -3196,7 +3196,7 @@
       "key": "lbl_rb_finalNoConverter",
       "en": "The final pages need Microsoft Word or LibreOffice on the computer running the app. You can still download the Word file.",
       "fr": "Les pages finales nécessitent Microsoft Word ou LibreOffice sur l'ordinateur qui exécute l'application. Vous pouvez toujours télécharger le fichier Word.",
-      "pt": "As páginas finais precisam do Microsoft Word ou do LibreOffice no computador que corre a aplicação. Pode sempre descarregar o ficheiro Word."
+      "pt": "As páginas finais precisam do Microsoft Word ou do LibreOffice no computador que corre a aplicação. Pode sempre transferir o ficheiro Word."
     },
     {
       "key": "lbl_rb_pdfFromWord",
@@ -3532,7 +3532,7 @@
       "key": "lbl_rb_kind_dq_ratios",
       "en": "Consistency ratios compared with expected ratios",
       "fr": "Ratios de cohérence comparés aux ratios attendus",
-      "pt": "Razões de consistência comparadas às razões esperadas"
+      "pt": "Razões de consistência comparadas com as razões esperadas"
     },
     {
       "key": "lbl_rb_kind_adj_comparison",
@@ -3598,7 +3598,7 @@
       "key": "lbl_rb_var_opv1_opv3",
       "en": "OPV1 and OPV3",
       "fr": "VPO1 et VPO3",
-      "pt": "VPO1 e VPO3"
+      "pt": "VOP1 e VOP3"
     },
     {
       "key": "lbl_rb_var_population",
@@ -3610,7 +3610,7 @@
       "key": "lbl_rb_var_births",
       "en": "Live births",
       "fr": "Naissances vivantes",
-      "pt": "Nascimentos vivos"
+      "pt": "Nados vivos"
     },
     {
       "key": "lbl_rb_var_under1",
@@ -4558,13 +4558,13 @@
       "key": "lbl_rb_pictureUrlHint",
       "en": "The picture is downloaded now and kept in the dataset, so the report does not need the internet later.",
       "fr": "L'image est téléchargée maintenant et gardée dans les données : le rapport n'aura plus besoin d'internet.",
-      "pt": "A imagem é descarregada agora e guardada nos dados: o relatório não precisará de internet depois."
+      "pt": "A imagem é transferida agora e guardada nos dados: o relatório não precisará de internet depois."
     },
     {
       "key": "lbl_rb_pictureDownloading",
       "en": "Downloading the picture…",
       "fr": "Téléchargement de l'image…",
-      "pt": "A descarregar a imagem…"
+      "pt": "A transferir a imagem…"
     },
     {
       "key": "lbl_rb_pictureFailed",
