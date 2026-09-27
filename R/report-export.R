@@ -432,17 +432,20 @@ report_store_asset <- function(context, id, src) {
     }
     if (shape != "rect") {
       # the shape in white on black: multiplying keeps the picture inside it, screening with the inverse whitens the rest
-      draw_shape <- function(canvas, fill, stroke = NA, lwd = 1) {
+      draw_shape <- function(canvas, fill, stroke = NA, lwd = 1, inset = 0) {
         canvas <- magick::image_draw(canvas)
         if (shape == "circle") {
-          graphics::symbols(w / 2, h / 2, circles = w / 2 - 1 - lwd * 0.375, inches = FALSE, add = TRUE, bg = fill, fg = stroke, lwd = lwd)
+          graphics::symbols(w / 2, h / 2, circles = max(1, w / 2 - 1 - lwd * 0.375 - inset), inches = FALSE, add = TRUE, bg = fill, fg = stroke, lwd = lwd)
         } else {
-          graphics::polygon(.rb_round_rect(w, h, min(w, h) * 0.06), col = fill, border = stroke, lwd = lwd)
+          outline <- .rb_round_rect(max(1, w - 2 * inset), max(1, h - 2 * inset), min(w, h) * 0.06)
+          graphics::polygon(outline$x + inset, outline$y + inset, col = fill, border = stroke, lwd = lwd)
         }
         grDevices::dev.off()
         canvas
       }
       mask <- magick::image_flatten(draw_shape(magick::image_blank(w, h, "black"), "white"))
+      # the shape `inset` pixels smaller inside the picture, white on black (the soft edge's opaque part)
+      inset_mask <- function(inset) magick::image_flatten(draw_shape(magick::image_blank(w, h, "black"), "white", inset = inset))
       img <- magick::image_composite(img, mask, operator = "Multiply")
       img <- magick::image_composite(img, magick::image_negate(mask), operator = "Screen")
       # a line width of 1 is 0.75 pixel on this device
@@ -462,7 +465,7 @@ report_store_asset <- function(context, id, src) {
       img <- magick::image_composite(magick::image_composite(magick::image_blank(w, h, "none"), img, operator = "over"),
                                      .rb_alpha_image(shape_mask), operator = "DstIn")
     }
-    img <- .rb_pic_style(img, style, shape_mask)
+    img <- .rb_pic_style(img, style, shape_mask, if (shape != "rect") inset_mask)
     changed <- TRUE
   }
   if (changed) {
@@ -494,8 +497,10 @@ report_store_asset <- function(context, id, src) {
 # A picture style drawn into the picture, as the editor draws it inside the item's box: the result has the picture's
 # size (the same shape, so it still fills its box), the picture made smaller inside it where the style needs room (the
 # shadow and the frame around it; the reflection takes the bottom quarter, the picture the top three quarters, drawn
-# the full width as the editor does). `mask`: the picture's shape (white on black) when it is not a rectangle.
-.rb_pic_style <- function(img, style, mask = NULL) {
+# the full width as the editor does). `mask`: the picture's shape (white on black) when it is not a rectangle;
+# `inset_mask(px)`: that shape drawn `px` smaller inside the picture (the soft edge draws it rather than shrinking the
+# mask: resizing and bordering a drawn mask gives a near-transparent result with the ImageMagick of Ubuntu 26.04).
+.rb_pic_style <- function(img, style, mask = NULL, inset_mask = NULL) {
   info <- magick::image_info(img)
   w <- info$width[[1]]
   h <- info$height[[1]]
@@ -540,9 +545,12 @@ report_store_asset <- function(context, id, src) {
   }
   if (style == "soft") {
     f <- max(2, round(m * 0.06))
-    base <- if (is.null(mask)) magick::image_blank(w, h, "white") else mask
-    base <- magick::image_resize(magick::image_convert(base, matte = FALSE), sprintf("%dx%d!", max(1, w - 2 * f), max(1, h - 2 * f)))
-    base <- magick::image_border(base, "black", sprintf("%dx%d", f, f))
+    if (is.function(inset_mask)) {
+      base <- inset_mask(f)
+    } else {
+      base <- magick::image_blank(max(1, w - 2 * f), max(1, h - 2 * f), "white")
+      base <- magick::image_border(magick::image_convert(base, matte = FALSE), "black", sprintf("%dx%d", f, f))
+    }
     base <- magick::image_blur(magick::image_convert(base, matte = FALSE), radius = 0, sigma = f / 2)
     return(magick::image_composite(over(blank(), img, 0, 0), .rb_alpha_image(base), operator = "DstIn"))
   }

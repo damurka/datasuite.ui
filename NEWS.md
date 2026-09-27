@@ -1,3 +1,9 @@
+# datasuite.ui 0.3.1
+
+* The "soft" picture style on a circle or rounded picture draws its smaller shape directly instead of shrinking the
+  shape's mask: with the ImageMagick of Ubuntu 26.04 (R-devel on Linux at r-universe) the shrunk mask made the whole
+  picture nearly transparent.
+
 # datasuite.ui 0.3.0
 
 * The "Ask AI" buttons work: the header's and each chart card's open DataSuite's chat with a prompt about the page or
