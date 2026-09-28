@@ -5651,6 +5651,78 @@
       "en": "%d document(s) added.",
       "fr": "%d document(s) ajouté(s).",
       "pt": "%d documento(s) adicionado(s)."
+    },
+    {
+      "key": "lbl_rb_aiGroup",
+      "en": "AI",
+      "fr": "IA",
+      "pt": "IA"
+    },
+    {
+      "key": "lbl_rb_aiWrite",
+      "en": "Write with AI",
+      "fr": "Écrire avec l'IA",
+      "pt": "Escrever com IA"
+    },
+    {
+      "key": "lbl_rb_aiWriteHint",
+      "en": "Ask DataSuite's AI to write this paragraph from the report's data",
+      "fr": "Demander à l'IA de DataSuite d'écrire ce paragraphe à partir des données du rapport",
+      "pt": "Pedir à IA do DataSuite que escreva este parágrafo a partir dos dados do relatório"
+    },
+    {
+      "key": "lbl_rb_aiChange",
+      "en": "Change with AI",
+      "fr": "Modifier avec l'IA",
+      "pt": "Alterar com IA"
+    },
+    {
+      "key": "lbl_rb_aiChangeHint",
+      "en": "Tell DataSuite's AI what to change in this block",
+      "fr": "Dire à l'IA de DataSuite ce qu'il faut modifier dans ce bloc",
+      "pt": "Dizer à IA do DataSuite o que alterar neste bloco"
+    },
+    {
+      "key": "lbl_rb_aiNarrative",
+      "en": "Write the narrative",
+      "fr": "Rédiger le texte",
+      "pt": "Escrever o texto"
+    },
+    {
+      "key": "lbl_rb_aiNarrativeHint",
+      "en": "Ask DataSuite's AI to write the report's text from its charts and tables: an introduction, a paragraph after each chart and table, and a conclusion",
+      "fr": "Demander à l'IA de DataSuite de rédiger le texte du rapport à partir de ses graphiques et tableaux : une introduction, un paragraphe après chaque graphique et tableau, et une conclusion",
+      "pt": "Pedir à IA do DataSuite que escreva o texto do relatório a partir dos seus gráficos e tabelas: uma introdução, um parágrafo após cada gráfico e tabela, e uma conclusão"
+    },
+    {
+      "key": "lbl_rb_aiUnavailable",
+      "en": "Available when the app runs in DataSuite",
+      "fr": "Disponible lorsque l'application s'exécute dans DataSuite",
+      "pt": "Disponível quando a aplicação é executada no DataSuite"
+    },
+    {
+      "key": "lbl_rb_aiPromptNarrative",
+      "en": "Fill in the narrative of the report \"{name}\" (id {id}): write a short introduction, a paragraph after each chart and table, and a conclusion, from the data in the report.",
+      "fr": "Rédige le texte du rapport « {name} » (id {id}) : une courte introduction, un paragraphe après chaque graphique et tableau, et une conclusion, à partir des données du rapport.",
+      "pt": "Escreva o texto do relatório \"{name}\" (id {id}): uma breve introdução, um parágrafo após cada gráfico e tabela, e uma conclusão, a partir dos dados do relatório."
+    },
+    {
+      "key": "lbl_rb_aiPromptWrite",
+      "en": "In the report \"{name}\" (id {id}), write the paragraph {block}: ",
+      "fr": "Dans le rapport « {name} » (id {id}), rédige le paragraphe {block} : ",
+      "pt": "No relatório \"{name}\" (id {id}), escreva o parágrafo {block}: "
+    },
+    {
+      "key": "lbl_rb_aiPromptWriteAfter",
+      "en": "In the report \"{name}\" (id {id}), write the paragraph {block} after the chart {after}, from its data.",
+      "fr": "Dans le rapport « {name} » (id {id}), rédige le paragraphe {block} après le graphique {after}, à partir de ses données.",
+      "pt": "No relatório \"{name}\" (id {id}), escreva o parágrafo {block} após o gráfico {after}, a partir dos seus dados."
+    },
+    {
+      "key": "lbl_rb_aiPromptChange",
+      "en": "Change the block {label} ({block}) in the report \"{name}\" (id {id}): ",
+      "fr": "Modifie le bloc {label} ({block}) du rapport « {name} » (id {id}) : ",
+      "pt": "Altere o bloco {label} ({block}) do relatório \"{name}\" (id {id}): "
     }
   ]
 }

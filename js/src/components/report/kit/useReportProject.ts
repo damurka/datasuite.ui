@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { RbProject } from "../types";
 
 // A report (document or slide deck) being edited: its state, saving it (sent after a pause, and never twice the same:
@@ -32,6 +32,10 @@ export function useReportProject(initial: () => RbProject, sign: (p: RbProject) 
   const [future, setFuture] = useState<RbProject[]>([]);
   const lastSent = useRef("");
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  // a builder closed (or opened again with the report as saved elsewhere) sends nothing more
+  useEffect(() => () => {
+    if (timer.current) clearTimeout(timer.current);
+  }, []);
 
   const set = (p: RbProject) => {
     ref.current = p;

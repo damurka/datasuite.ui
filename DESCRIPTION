@@ -1,6 +1,6 @@
 Package: datasuite.ui
 Title: Shiny Interface, Chart Options and Report Builder for DataSuite Apps
-Version: 0.3.3
+Version: 0.3.4
 Authors@R: c(
       person("David", "Kariuki", , "hello@damurka.com", role = c("aut", "cre"),
              comment = c(ORCID = "0009-0003-6159-1107")),
@@ -23,27 +23,27 @@ Depends:
     R (>= 4.1)
 Imports:
     cli (>= 3.6.2),
-    flextable,
-    fontawesome,
+    flextable (>= 0.10.0),
+    fontawesome (>= 0.5.3),
     ggplot2 (>= 3.5.1),
     graphics,
     grDevices,
-    htmltools,
-    jquerylib,
-    jsonlite,
-    officer,
-    openxlsx,
-    purrr,
+    htmltools (>= 0.5.9),
+    jquerylib (>= 0.1.4),
+    jsonlite (>= 2.0.0),
+    officer (>= 0.7.5),
+    openxlsx (>= 4.2.8.1),
+    purrr (>= 1.2.2),
     rlang (>= 1.1.0),
     scales (>= 1.3.0),
-    shiny,
-    shiny.i18n,
-    shiny.react,
+    shiny (>= 1.14.0),
+    shiny.i18n (>= 0.3.0),
+    shiny.react (>= 0.4.0),
     stats,
-    stringr,
+    stringr (>= 1.6.0),
     tools,
     utils,
-    xml2
+    xml2 (>= 1.6.0)
 Suggests:
     chromote,
     dplyr,

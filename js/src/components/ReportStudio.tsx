@@ -17,6 +17,8 @@ import { Icon, ICONS } from "./report/ui";
 // buttons that ask R to do something (open, new, delete, export, final pages) are events on `<id>__action`.
 // A new report (blank or from a standard report) is named first: the name is what the user finds it by later. A page's
 // "Generate report" button arrives as `request` (its standard report), which opens the same naming dialog.
+// A change the AI made to the open report arrives as "cd-report-reload" (the report as saved): the builder opens it
+// again. The builder's AI buttons are events too (type "ask_ai"): R writes the prompt and opens DataSuite's chat.
 
 interface Props {
   id?: string;
@@ -38,6 +40,8 @@ interface Props {
   suggest?: { country?: string; year?: string };
   /** A page asked for a report from its standard report. */
   request?: { preset?: string | null; nonce: number } | null;
+  /** Whether DataSuite's AI can be asked (the app runs in DataSuite). */
+  aiEnabled?: boolean;
   texts: Texts;
   onChange?: (value: RbProject | null) => void;
 }
@@ -48,7 +52,7 @@ function send(id: string | undefined, action: Record<string, unknown>) {
   }
 }
 
-function ReportStudio({ id, value, projects, presets, kinds, regions, years, themes, fonts, fieldCatalog, flag, converter, layouts, chartSchema, suggest, request, texts, onChange }: Props) {
+function ReportStudio({ id, value, projects, presets, kinds, regions, years, themes, fonts, fieldCatalog, flag, converter, layouts, chartSchema, suggest, request, aiEnabled, texts, onChange }: Props) {
   useMountSignal(id);
   const lang = useLang();
   setTallKinds((kinds || []).filter((k) => k.tall).map((k) => k.kind));
@@ -72,6 +76,14 @@ function ReportStudio({ id, value, projects, presets, kinds, regions, years, the
   // slide deck
   const [naming, setNaming] = useState<string | null>(null);
   const handled = useRef<number>(0);
+  // the open report changed elsewhere (the AI): it is opened again as saved, the builder started afresh
+  const [reloads, setReloads] = useState(0);
+  useShinyMessage("cd-report-reload", "id", id, (msg) => {
+    const p = msg.project as RbProject | undefined;
+    if (!p || !value || p.id !== value.id) return;
+    if (onChange) onChange(p);
+    setReloads((n) => n + 1);
+  });
 
   const BLANK_DECK = "@deck";
   const suggestName = (presetId: string) => {
@@ -180,11 +192,13 @@ function ReportStudio({ id, value, projects, presets, kinds, regions, years, the
         }
       }
     : null;
+  const ai = { enabled: !!aiEnabled, ask: (request: Record<string, unknown>) => send(id, { type: "ask_ai", ...request }) };
+  const editorKey = value ? `${value.id}:${reloads}` : "";
 
   if (common) {
     return (
       <>
-        {value?.kind === "deck" ? <DeckEditor {...common} /> : <ReportEditor {...common} thumbs={thumbs} flag={flag} />}
+        {value?.kind === "deck" ? <DeckEditor key={editorKey} {...common} /> : <ReportEditor key={editorKey} {...common} thumbs={thumbs} flag={flag} ai={ai} />}
         {nameDialog}
       </>
     );

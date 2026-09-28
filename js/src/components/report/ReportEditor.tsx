@@ -71,6 +71,9 @@ interface Props {
   /** An Office file to make a theme from, and the theme made (applied when it arrives). */
   onThemeFile?: (file: File) => void;
   themeArrived?: { theme?: RbTheme; failed?: string; nonce: number } | null;
+  /** DataSuite's AI: whether it can be asked (the app runs in DataSuite), and asking it about the report (R writes
+   *  the prompt and opens the chat). */
+  ai?: { enabled: boolean; ask: (request: { scope: "narrative" | "write" | "change"; block?: string; after?: string }) => void };
 }
 
 const BLOCK_MIME = "application/x-rb-block";
@@ -536,6 +539,44 @@ export function ReportEditor(props: Props) {
     if (editor) insertBlock(editor, fromTemplate(withAsset(tpl)));
   };
   const update = (id: string, patch: Partial<RbBlock>) => editor && updateBlock(editor, id, withAsset(patch));
+
+  // ---- DataSuite's AI: the report is saved first (the AI reads it as saved), then R opens the chat with a prompt that
+  // names the report and the block
+  const topNodes = (): { bid: string; type: string; block?: RbBlock }[] => {
+    const out: { bid: string; type: string; block?: RbBlock }[] = [];
+    editorRef.current?.state.doc.forEach((node) => {
+      const b = node.type.name === "rbBlock" ? (node.attrs.block as RbBlock | undefined) : undefined;
+      out.push({ bid: (node.attrs.bid as string) || "", type: b ? b.type : node.type.name, block: b });
+    });
+    return out;
+  };
+  const askAi = (request: { scope: "narrative" | "write" | "change"; block?: string; after?: string }) => {
+    if (!props.ai?.enabled) return;
+    sync(true);
+    props.ai.ask(request);
+  };
+  // the chart or table a paragraph is written after: the nearest before it, when only headings and empty paragraphs are
+  // between them
+  const chartBefore = (bid: string): string | undefined => {
+    const nodes = topNodes();
+    const at = nodes.findIndex((n) => n.bid === bid);
+    for (let i = at - 1; i >= 0; i--) {
+      const n = nodes[i];
+      if (n.block && (n.block.type === "chart" || n.block.type === "table")) return n.bid;
+      if (n.type === "heading" || (n.type === "paragraph" && !(editorRef.current?.state.doc.child(i).textContent || "").trim())) continue;
+      return undefined;
+    }
+    return undefined;
+  };
+  const caretAt = state?.at || null;
+  const aiCommands = props.ai
+    ? {
+        enabled: props.ai.enabled,
+        onWrite: caretAt && !canvasFor && current?.type === "paragraph" ? () => askAi({ scope: "write", block: caretAt, after: chartBefore(caretAt) }) : null,
+        onChange: !canvasFor && (docSel?.id || caretAt) ? () => askAi({ scope: "change", block: (docSel?.id || caretAt) as string }) : null,
+        onNarrative: () => askAi({ scope: "narrative" })
+      }
+    : undefined;
   const remove = (id: string) => editor && removeBlock(editor, id);
   const duplicate = (id: string) => editor && duplicateBlock(editor, id);
   const move = (id: string, delta: number) => editor && moveBlock(editor, id, delta);
@@ -750,6 +791,7 @@ export function ReportEditor(props: Props) {
           onTheme={(th) => setDesign(themeDesign(th))}
           onPanel={(p) => setPanel(p)}
           onThemeFile={props.onThemeFile}
+          ai={aiCommands}
         />
       )}
 

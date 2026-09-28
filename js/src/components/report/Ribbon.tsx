@@ -15,7 +15,7 @@ import { PictureFormatTab } from "./ribbon/PictureFormatTab";
 import { HeaderFooterMenu, LinkMenu, NumberField, PictureMenu } from "./ribbon/InsertMenus";
 import { FieldMenu } from "./ribbon/FieldMenu";
 import { restoreSelection, saveSelection } from "./ribbon/selection";
-import { ObjectToolbar } from "./ribbon/ObjectToolbar";
+import { AI_ICON, ObjectToolbar } from "./ribbon/ObjectToolbar";
 import { TextToolbar } from "./ribbon/TextToolbar";
 
 export { FieldMenu } from "./ribbon/FieldMenu";
@@ -84,6 +84,8 @@ interface Props {
   textBox?: { id: string; fill?: string; fill_opacity?: number; outline?: string; onPatch: (patch: Partial<RbBlock>) => void };
   onDuplicate: () => void;
   onRemove: () => void;
+  /** DataSuite's AI (a document's builder). */
+  ai?: AiCommands;
   /** A slide deck is being edited (PowerPoint's ribbon): its slides' commands; the document-only groups are hidden. */
   deck?: DeckCommands;
 }
@@ -101,6 +103,18 @@ export interface DeckCommands {
   onTextBox: () => void;
   slideSize: "16:9" | "4:3";
   onSlideSize: (size: "16:9" | "4:3") => void;
+}
+
+/** DataSuite's AI on a document: each button opens its chat with a prompt about the report, for the user to send. */
+export interface AiCommands {
+  /** Whether the app runs in DataSuite (else the buttons are disabled, with a hint). */
+  enabled: boolean;
+  /** Write the paragraph the caret is in (null: the caret is not in one). */
+  onWrite: (() => void) | null;
+  /** Change the block the caret is in, or the chart, table or picture selected (null: none). */
+  onChange: (() => void) | null;
+  /** Write the report's whole narrative. */
+  onNarrative: () => void;
 }
 
 
@@ -562,6 +576,8 @@ export function Ribbon(props: Props) {
         onCropMode={props.onCropMode}
         onSelected={props.onSelected}
         onCustomize={props.onCustomize}
+        onAskAi={props.ai?.enabled && props.ai.onChange ? props.ai.onChange : undefined}
+        aiHint={t("aiChangeHint")}
         onMove={props.onMove}
         onDuplicate={props.onDuplicate}
         onRemove={props.onRemove}
@@ -701,6 +717,15 @@ export function Ribbon(props: Props) {
             <Group label={t("field")}>
               <FieldMenu catalog={props.fieldCatalog} fields={props.fields} t={t} lang={lang} big />
             </Group>
+            {props.ai && (
+              <Group label={t("aiGroup")} icon={AI_ICON}>
+                <Big icon={AI_ICON} label={t("aiNarrative")} tone="purple" disabled={!props.ai.enabled} hint={props.ai.enabled ? t("aiNarrativeHint") : t("aiUnavailable")} onClick={props.ai.onNarrative} />
+                <Col>
+                  <Small wide icon={AI_ICON} label={t("aiWrite")} disabled={!props.ai.enabled || !props.ai.onWrite} hint={props.ai.enabled ? t("aiWriteHint") : t("aiUnavailable")} onClick={() => props.ai?.onWrite?.()} />
+                  <Small wide icon={AI_ICON} label={t("aiChange")} disabled={!props.ai.enabled || !props.ai.onChange} hint={props.ai.enabled ? t("aiChangeHint") : t("aiUnavailable")} onClick={() => props.ai?.onChange?.()} />
+                </Col>
+              </Group>
+            )}
           </>
         )}
 

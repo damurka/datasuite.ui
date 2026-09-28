@@ -113,7 +113,10 @@ Built in (datasuite.ui):
 Added by cd2030.core for the Countdown apps: `setFilters { ... }` (view) -> the new state;
 `saveReport { project, reportId? }` -> `{ reportId }` and `addGraph { spec, graphId? }` -> `{ graphId }` (add; replace
 when the id given is already saved); `generateReport { preset | reportId, format }` -> `{ file }` (add; replace when
-the file exists).
+the file exists); `listReports` and `readReport { reportId, maxRows?, data? }` (read: `report_list()`,
+`report_read()`); `updateBlocks { reportId, changes }` -> `{ reportId, changes }` (replace: `report_update_blocks()`,
+targeted changes by block id; its summary says what each change does). The Reports page opens the open report
+again when it changes.
 
 DataSuite adds one of its own, done on its side: `screenshotChart` (`componentId`) = `focusComponent`, then a
 screenshot of the element at `selector`.

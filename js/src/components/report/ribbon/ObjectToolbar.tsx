@@ -6,6 +6,9 @@ import { Big, Drop, Item, keep, Small } from "../kit/controls";
 import { OPACITIES, PicStyleGallery, RotateMenu, SHAPES, SwatchGrid, WrapMenu } from "../kit/menus";
 import { placeAbove } from "../kit/place";
 
+/** DataSuite's AI: a sparkle. */
+export const AI_ICON = ["M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z", "M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"];
+
 // The toolbar over a chart, table or picture selected on the page (or a text box of a slide or free page), as Word's
 // floating toolbar: its style and shape, crop, border, wrapping, turning, position and width, Customize, moving it,
 // duplicating and deleting it. It is put in the builder's root (.cd-rb) so the pages' zoom does not scale it.
@@ -25,6 +28,9 @@ interface Props {
   onCropMode?: () => void;
   onSelected: (patch: Partial<RbBlock>) => void;
   onCustomize: () => void;
+  /** Change the selected block with DataSuite's AI (its chat opens with a prompt about it). */
+  onAskAi?: () => void;
+  aiHint?: string;
   onMove?: (delta: number) => void;
   onDuplicate: () => void;
   onRemove: () => void;
@@ -229,6 +235,7 @@ export function ObjectToolbar(props: Props) {
             </Drop>
     )}
             {sel.type === "chart" && <Big icon={["M4 7h9", "M17 7h3", "M4 17h3", "M11 17h9", "M15 5v4", "M9 15v4"]} label={t("customize")} tone="purple" onClick={props.onCustomize} />}
+            {props.onAskAi && (sel.type === "chart" || sel.type === "table") && <Big icon={AI_ICON} label={t("aiChange")} hint={props.aiHint} tone="purple" onClick={props.onAskAi} />}
             <span className="cd-rb-mini__sep" />
             <div className="cd-rb-mini__rows">
               <div className="cd-rb-mini__row">

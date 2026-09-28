@@ -13,6 +13,11 @@
 #   - a report has its own language (project$lang), chosen when it is created (the app's language by default): the
 #     standard report's text is written in it, and its charts, tables, dates and file are always drawn in it
 #     (cd_report_translator()), whatever language the app is in. A report saved before this has none and follows the app.
+#   - the AI changes saved reports too (report_update_blocks(), through the app's AI bridge): a change to the open
+#     report is sent to the builder ("cd-report-reload"), which opens it again as saved; the builder saves every edit,
+#     so what it had is in the saved report already,
+#   - the builder's AI buttons (write a paragraph, change a block, write the narrative) open DataSuite's chat with a
+#     prompt about the report (type "ask_ai"; .rb_ai_ask_prompt()), for the user to send.
 
 reports_ui <- function(id, i18n) {
   ns <- NS(id)
@@ -56,6 +61,8 @@ cd_report_studio <- function(inputId, i18n = cd_i18n()) {
     fieldCatalog = cd_report_field_catalog(i18n),
     flag = NULL,
     converter = NULL,
+    # the AI buttons work when the app runs in DataSuite (its chat); elsewhere they are disabled, with a hint
+    aiEnabled = .cd_in_datasuite(),
     chartSchema = list(tabs = .chart_schema_cache$schema$tabs, fields = .chart_schema_cache$schema$fields,
                        texts = lapply(chart_keys, function(k) cd_text(i18n, k))),
     texts = cd_report_texts(i18n)
@@ -160,7 +167,15 @@ reports_server <- function(id, cache, i18n, active = reactive(TRUE)) {
 
     message <- function(type, payload) session$sendCustomMessage(type, c(list(id = studio_id), payload))
     push <- function(...) cd_update_input("studio", session, ...)
-    projects <- function() tryCatch(cache()$report_projects, error = function(e) list()) %||% list()
+    # a report saved without its own id (reports the AI saved before cd2030.core 1.3.4) takes the key it is stored
+    # under: the builder saves by the report's id, so without one every edit failed to save
+    projects <- function() {
+      ps <- tryCatch(cache()$report_projects, error = function(e) list()) %||% list()
+      for (key in names(ps)) {
+        if (is.list(ps[[key]]) && !(is.character(ps[[key]]$id) && length(ps[[key]]$id) == 1 && nzchar(ps[[key]]$id))) ps[[key]]$id <- key
+      }
+      ps
+    }
 
     # the app's language, and the translator a report is drawn with: in the report's own language
     lang <- reactive(if (isTruthy(cache())) cache()$language %||% "en" else "en")
@@ -253,6 +268,25 @@ reports_server <- function(id, cache, i18n, active = reactive(TRUE)) {
       rm(list = ls(thumbs), envir = thumbs)
       thumb_queue(list())
     }, ignoreInit = TRUE)
+
+    # the dataset's reports changed elsewhere (the AI saved or changed one): the list follows, and the open report, when
+    # it is not what the builder last saved, is sent to it to open again (the builder saves every edit, so nothing of
+    # the user's is lost)
+    observeEvent(tryCatch(cache()$report_projects, error = function(e) NULL), {
+      req(cache(), active())
+      open <- state$open
+      if (is.null(open)) return(push_home())
+      stored <- projects()[[open]]
+      if (is.null(stored)) {
+        state$open <- NULL
+        return(push_home(list(value = NULL)))
+      }
+      if (identical(stored, isolate(state$project))) return()
+      state$project <- stored
+      message("cd-report-reload", list(project = stored))
+      send_fields(stored)
+      send_assets(stored)
+    }, ignoreInit = TRUE, ignoreNULL = FALSE)
 
     save <- function(project) {
       project$updated <- format(Sys.time(), "%Y-%m-%d %H:%M")
@@ -455,6 +489,11 @@ reports_server <- function(id, cache, i18n, active = reactive(TRUE)) {
         cd_report_export(session, cache(), projects()[[state$open]], a$format %||% "docx", i18n, tr(projects()[[state$open]]), message, state)
       } else if (type == "final") {
         cd_report_final(cache(), projects()[[state$open]], tr(projects()[[state$open]]), message)
+      } else if (type == "ask_ai") {
+        # an AI button of the builder: DataSuite's chat opens with a prompt about the report, in the app's language
+        p <- isolate(state$project) %||% projects()[[state$open %||% ""]]
+        req(p)
+        .ai_host_request("openChat", query = .rb_ai_ask_prompt(a, p, i18n, isolate(lang())))
       }
     })
 
@@ -465,6 +504,52 @@ reports_server <- function(id, cache, i18n, active = reactive(TRUE)) {
     # its link is hidden; a hidden output is suspended and its download never registered
     outputOptions(output, "file", suspendWhenHidden = FALSE)
   })
+}
+
+# The prompt an AI button of the builder opens DataSuite's chat with (`a`: list(scope, block, after)), in `lang`:
+#   narrative  the whole report's text: an introduction, a paragraph after each chart and table, a conclusion
+#   write      one paragraph (`block`), after the chart or table `after` when there is one
+#   change     one block (`block`): the user says what to change
+# The report and the blocks are named with their ids, so the AI reads the report and changes only what is asked.
+.rb_ai_ask_prompt <- function(a, project, i18n, lang) {
+  text <- function(key, fallback) {
+    value <- tryCatch(cd_plain_text(i18n, key, lang), error = function(e) key)
+    if (identical(value, key)) fallback else value
+  }
+  fill <- function(template, values) {
+    for (k in names(values)) {
+      slot <- paste0("{", k, "}")
+      at <- regexpr(slot, template, fixed = TRUE)
+      if (at > 0) template <- paste0(substr(template, 1, at - 1), values[[k]], substr(template, at + nchar(slot), nchar(template)))
+    }
+    template
+  }
+  blocks <- report_project_blocks(project)
+  find <- function(id) if (.is_string(id)) Filter(function(b) identical(b$id, id), blocks)[1][[1]]
+  label <- function(b) {
+    if (is.null(b)) return("")
+    if (isTRUE(b$type %in% c("chart", "table"))) {
+      what <- if (.is_string(b$title)) b$title else text(paste0("lbl_rb_kind_", b$kind %||% ""), b$kind %||% "")
+      ind <- if (.is_string(b$indicator)) text(paste0("opt_", b$indicator), b$indicator)
+      return(sprintf("\"%s\"%s", what, if (!is.null(ind)) sprintf(" (%s)", ind) else ""))
+    }
+    plain <- .rb_ai_plain(b$text)
+    if (nzchar(plain)) sprintf("\"%s\"", if (nchar(plain) > 40) paste0(substr(plain, 1, 40), "...") else plain) else ""
+  }
+  values <- list(name = project$name %||% "", id = project$id %||% "", block = if (.is_string(a$block)) a$block else "")
+  scope <- a$scope %||% "narrative"
+  prompt <- if (identical(scope, "change")) {
+    fill(text("lbl_rb_aiPromptChange", "Change the block {label} ({block}) in the report \"{name}\" (id {id}): "),
+         c(values, label = label(find(a$block))))
+  } else if (identical(scope, "write") && !is.null(find(a$after))) {
+    fill(text("lbl_rb_aiPromptWriteAfter", "In the report \"{name}\" (id {id}), write the paragraph {block} after the chart {after}, from its data."),
+         c(values, after = label(find(a$after))))
+  } else if (identical(scope, "write")) {
+    fill(text("lbl_rb_aiPromptWrite", "In the report \"{name}\" (id {id}), write the paragraph {block}: "), values)
+  } else {
+    fill(text("lbl_rb_aiPromptNarrative", "Fill in the narrative of the report \"{name}\" (id {id}): write a short introduction, a paragraph after each chart and table, and a conclusion, from the data in the report."), values)
+  }
+  gsub("[ \t\n]+", " ", prompt)
 }
 
 # One chart or table, drawn as the exported file will draw it (the theme and the report's saved chart styling included).

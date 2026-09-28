@@ -55,10 +55,10 @@ export const toneOf = (icon: string[] | undefined, tone?: string) => tone || (ic
 export const tip = (label: string, keys?: string) => (keys ? `${label} (${keys})` : label);
 
 /** A large button: an icon over its label (and an arrow under it when it opens a menu). */
-export function Big({ icon, label, onClick, menu, disabled, on, tone, keys }: { icon: string[]; label: string; onClick?: () => void; menu?: boolean; disabled?: boolean; on?: boolean; tone?: string; keys?: string }) {
+export function Big({ icon, label, onClick, menu, disabled, on, tone, keys, hint }: { icon: string[]; label: string; onClick?: () => void; menu?: boolean; disabled?: boolean; on?: boolean; tone?: string; keys?: string; hint?: string }) {
   const tn = toneOf(icon, tone);
   return (
-    <button type="button" className={["cd-rb-big", on ? "cd-rb-big--on" : "", tn ? "cd-rb-tone--" + tn : ""].join(" ")} title={tip(label, keys)} disabled={disabled} aria-pressed={on} onMouseDown={keep} onClick={onClick}>
+    <button type="button" className={["cd-rb-big", on ? "cd-rb-big--on" : "", tn ? "cd-rb-tone--" + tn : ""].join(" ")} title={hint || tip(label, keys)} disabled={disabled} aria-pressed={on} onMouseDown={keep} onClick={onClick}>
       <Icon d={icon} size={26} />
       <span>{label}</span>
       {menu && <Icon d={ICONS.expand} size={11} />}
@@ -67,10 +67,10 @@ export function Big({ icon, label, onClick, menu, disabled, on, tone, keys }: { 
 }
 
 /** A small button: an icon, and its label beside it when `wide`; `keys`, its shortcut, shows in its tooltip. */
-export function Small({ icon, label, onClick, on, disabled, wide, children, keys, tone }: { icon?: string[]; label: string; onClick?: () => void; on?: boolean; disabled?: boolean; wide?: boolean; children?: React.ReactNode; keys?: string; tone?: string }) {
+export function Small({ icon, label, onClick, on, disabled, wide, children, keys, tone, hint }: { icon?: string[]; label: string; onClick?: () => void; on?: boolean; disabled?: boolean; wide?: boolean; children?: React.ReactNode; keys?: string; tone?: string; hint?: string }) {
   const tn = toneOf(icon, tone);
   return (
-    <button type="button" className={["cd-rb-sm", on ? "cd-rb-sm--on" : "", wide ? "cd-rb-sm--wide" : "", tn ? "cd-rb-tone--" + tn : ""].join(" ")} aria-label={label} title={tip(label, keys)} aria-pressed={on} disabled={disabled} onMouseDown={keep} onClick={onClick}>
+    <button type="button" className={["cd-rb-sm", on ? "cd-rb-sm--on" : "", wide ? "cd-rb-sm--wide" : "", tn ? "cd-rb-tone--" + tn : ""].join(" ")} aria-label={label} title={hint || tip(label, keys)} aria-pressed={on} disabled={disabled} onMouseDown={keep} onClick={onClick}>
       {icon && <Icon d={icon} size={16} />}
       {children}
       {wide && <span>{label}</span>}

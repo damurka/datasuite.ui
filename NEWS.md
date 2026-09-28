@@ -1,3 +1,29 @@
+# datasuite.ui 0.3.4
+
+* The AI can read a saved report and change parts of it, without replacing it (what the apps' AI bridge actions
+  `listReports`, `readReport` and `updateBlocks` use):
+  - `report_list()`: the saved reports (id, name, report or deck, language, blocks, last edited).
+  - `report_read()`: a report's blocks in order, compactly -- each text's words, and for each chart and table its kind,
+    settings, options and a short table of what it shows (its title, subtitle, caption and the values it plots, or
+    the table's rows; capped), drawn as the report draws it -- and the report's language, so the AI writes from the
+    report's own numbers, in its language.
+  - `report_update_blocks()`: targeted changes by block id, applied in order and checked as a whole -- a text's words,
+    type or heading level; a chart's or table's kind (the settings the new kind does not take are left out), its
+    settings (checked against the kind; the allowed values in the error), its chart options (checked with
+    `cd_chart_options()`; the options in the error), its size, title and caption; a picture's caption and size; a new
+    page before a block; and new blocks inserted after one, blocks removed or moved. The design, the cover and every
+    other block stay as they are. It returns one sentence per change, for the user to confirm.
+* The Reports page: an **AI** group on the document builder's Home tab -- **Write the narrative** (an introduction, a
+  paragraph after each chart and table, a conclusion), **Write with AI** (the paragraph the caret is in, from the chart
+  or table before it) and **Change with AI** (the block the caret is in) -- and **Change with AI** on a selected chart
+  or table. Each opens DataSuite's chat with a prompt naming the report and the block, for the user to finish or send
+  (English, French and Portuguese). Outside DataSuite they are disabled, with a hint.
+* The Reports page follows the dataset's reports: a report the AI saved or changed shows in the list at once, and a
+  change to the report that is open is opened again in the builder (it saves every edit, so nothing is lost).
+* A report saved without its own id (reports the AI saved before cd2030.core 1.3.4) takes the key it is stored under,
+  so the builder's edits to it are saved again (they were not).
+* Every package in Imports has a minimum version.
+
 # datasuite.ui 0.3.3
 
 * Portuguese: the interface reads as Portuguese is written in Mozambique and Angola (European norm) instead of Brazilian Portuguese: "ficheiro", "Transferir", "A carregar", "Repor predefinição" and so on.
