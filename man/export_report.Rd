@@ -40,7 +40,8 @@ for a deck \code{"auto"}, \code{"powerpoint"} or \code{"libreoffice"} (\code{"wo
 \code{"powerpoint"}) or, for Word, what finished the file (\code{"word"}, or \code{NULL}).
 }
 \description{
-Draws every chart and table from the loaded data and writes the report as a Word document or a PDF. The PDF is made
-from the Word file (see \code{\link[=report_converter]{report_converter()}}), so the two match page for page. A slide deck (\code{kind = "deck"}) is
+Draws every chart and table from the loaded data and writes the report as a Word document or a PDF, with the report
+builder's own writers (Quire's, through \code{\link[quire:quire_export]{quire::quire_export()}}). The PDF is made from the Word file (see
+\code{\link[=report_converter]{report_converter()}}), so the two match page for page. A slide deck (\code{kind = "deck"}) is
 written by \code{\link[=export_deck]{export_deck()}}, as a PowerPoint file or a PDF.
 }

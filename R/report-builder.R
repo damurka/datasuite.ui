@@ -14,10 +14,10 @@
 #                  options (chart options for this chart only, as the chart customize panel gives them)
 #   image: src (a data URL), ratio (height / width), size = "full" | "half" | "third", width (percent of its column),
 #          align, shape = "rect" | "rounded" | "circle", border (TRUE / FALSE), caption, alt
-#   canvas: a free-layout page (see R/report-canvas.R): h (height of its area, inches), items placed like a slide's
+#   canvas: a free-layout page: h (height of its area, inches), items placed like a slide's
 #
 # Consecutive half-width (or third-width) charts and images share a row. The design (fonts, colours, page) is R/report-theme.R; writing
-# the files is R/report-export.R.
+# the files is Quire's (R/report-export.R, R/report-quire.R).
 
 #' A translated string
 #'
@@ -31,7 +31,6 @@ report_translate <- function(i18n, key, fallback = key) {
   value <- tryCatch(i18n$t(key), error = function(e) key)
   if (is.null(value) || identical(value, key) || !nzchar(value)) fallback else value
 }
-
 
 .rb_t <- report_translate
 
@@ -172,25 +171,6 @@ report_block_size <- function(block, design = NULL) {
 .rb_box <- function(block) {
   box <- suppressWarnings(as.numeric(unlist(block$box)))
   if (length(box) == 2 && all(is.finite(box)) && all(box > 0)) box else NULL
-}
-
-# The size a chart or image is shown at on the page (inches). A picture's is report_block_size(); a chart is drawn at
-# report_block_size() and then treated as a picture of that shape: its width (percent of its column), crop and turn
-# change the size it is shown at, as in the editor. Unformatted, the two are the same.
-.rb_shown_size <- function(block, design = NULL) {
-  size <- report_block_size(block, design)
-  if (!identical(block$type, "chart")) return(size)
-  block$type <- "image"
-  block$ratio <- size[2] / size[1]
-  report_block_size(block, design)
-}
-
-# Whether a chart is formatted as a picture (its drawing is then made into one and changed as pictures are)
-.rb_chart_pictured <- function(block) {
-  identical(block$type, "chart") && (
-    any(.rb_image_crop(block) > 0) || as.integer(block$rotate %||% 0) %% 360 != 0 || isTRUE(block$flip_h) || isTRUE(block$flip_v) ||
-      !(block$shape %||% "rect") %in% "rect" || isTRUE(block$border) || isTRUE(block$greyscale) ||
-      !(as.numeric(block$brightness %||% 0) %in% 0) || !(as.numeric(block$contrast %||% 0) %in% 0) || nzchar(.rb_pic_style_of(block)))
 }
 
 # An image block's picture once turned, cropped and stretched: its height over its width (a circle is square before

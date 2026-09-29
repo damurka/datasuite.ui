@@ -4,7 +4,6 @@ import "./tabswitch";
 import "./dialog";
 import "./aibridge";
 import ChartCustomize from "./components/ChartCustomize";
-import ReportStudio from "./components/ReportStudio";
 import ChipMulti from "./components/ChipMulti";
 import ChipNumber from "./components/ChipNumber";
 import ChipSelect from "./components/ChipSelect";
@@ -33,7 +32,6 @@ window.jsmodule = {
   ...window.jsmodule,
   "@/countdown": {
     ChartCustomize,
-    ReportStudio,
     ChipMulti,
     ChipNumber,
     ChipSelect,

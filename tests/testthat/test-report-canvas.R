@@ -19,8 +19,3 @@ test_that("report_project_blocks gives a free-layout page's items, not the page 
   expect_identical(report_project_blocks(plain), plain$blocks)
 })
 
-test_that("a canvas is as tall as the page's text unless given a height", {
-  page <- report_page(report_default_design())
-  expect_equal(.rb_canvas_height(list(type = "canvas"), page), page$text_height)
-  expect_equal(.rb_canvas_height(list(type = "canvas", h = 5), page), 5)
-})

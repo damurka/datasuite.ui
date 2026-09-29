@@ -20,10 +20,10 @@
 #' @aliases cd_pages_ui cd_panel_to_options cd_plain_options cd_plain_text cd_plot_client_height cd_plot_output
 #' @aliases cd_plot_server cd_plot_toolbar_content cd_plot_toolbar_ui cd_plot_ui cd_react_dependency cd_react_element
 #' @aliases cd_read_translation_file cd_register_translations cd_remounted cd_remove_dialog cd_render_plot cd_report_blocks
-#' @aliases cd_report_design_asset_ids cd_report_designs_files cd_report_designs_store cd_report_export cd_report_field_catalog cd_report_final
-#' @aliases cd_report_flag cd_report_is_deck cd_report_key cd_report_kinds cd_report_new_id cd_report_preview
-#' @aliases cd_report_regions cd_report_sig cd_report_studio cd_report_summary cd_report_texts cd_report_thumb
-#' @aliases cd_report_translator cd_report_with_template cd_request_report cd_reset_file_upload cd_screen cd_screens
+#' @aliases cd_report_designs_store cd_report_field_catalog
+#' @aliases cd_report_flag cd_report_is_deck cd_report_kinds cd_report_new_id
+#' @aliases cd_report_regions cd_report_render cd_report_summary cd_flextable_render
+#' @aliases cd_report_translator cd_request_report cd_reset_file_upload cd_screen cd_screens
 #' @aliases cd_set_file_upload cd_set_language cd_sheet_writer cd_shell_server cd_show_dialog cd_sidebar
 #' @aliases cd_spinner cd_startup_loader cd_status_banner cd_tab_panes cd_tab_strip cd_table_card
 #' @aliases cd_table_toolbar cd_tag_assert cd_text cd_text_area cd_tooltip cd_translations

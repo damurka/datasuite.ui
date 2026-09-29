@@ -56,19 +56,6 @@ test_that("report_project_blocks gives a document's blocks and a deck's items' b
   expect_identical(blocks[[2]]$type, "paragraph")
 })
 
-test_that("slide text keeps paragraphs' alignment, headings and empty lines", {
-  lines <- .rb_lines('<p style="text-align: center">Hi <strong>b</strong></p><p></p><h2>Sub</h2><ul><li><p>one</p></li></ul>', keep_empty = TRUE)
-  expect_length(lines, 4)
-  expect_identical(attr(lines[[1]], "align"), "center")
-  expect_length(lines[[2]], 0)
-  expect_identical(attr(lines[[3]], "heading"), 2L)
-  expect_identical(attr(lines[[4]], "list"), "bullet")
-  # documents drop empty paragraphs, as before
-  expect_length(.rb_lines("<p>a</p><p></p><p>b</p>"), 2)
-  expect_match(.rb_deck_bullet("number", 1, 3), 'startAt="3"', fixed = TRUE)
-  expect_match(.rb_deck_bullet("bullet", 2, 1), "buChar", fixed = TRUE)
-})
-
 test_that("a deck asks for PowerPoint, a document for Word", {
   deck <- list(kind = "deck", slides = list())
   expect_error(export_report(NULL, deck, tempfile(fileext = ".docx"), "docx"), "PowerPoint")

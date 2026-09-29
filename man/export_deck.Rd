@@ -34,8 +34,7 @@ export_deck(
 }
 \description{
 Draws every chart and table of a deck from the loaded data and writes it as a PowerPoint file, or as a PDF made from
-that file (by PowerPoint or LibreOffice, see \code{\link[=report_deck_converter]{report_deck_converter()}}). Every item is placed at its box: text as
-text boxes in the design's fonts and colours, charts as editable drawings (or pictures, when formatted as pictures or
-when they cannot be drawn as shapes), tables as PowerPoint tables, pictures as pictures. The slides' speaker notes
-are kept.
+that file (by PowerPoint or LibreOffice, see \code{\link[=report_deck_converter]{report_deck_converter()}}), with the report builder's own writers
+(Quire's, through \code{\link[quire:quire_export]{quire::quire_export()}}). Every item is placed at its box: text as text boxes in the design's fonts
+and colours, charts and pictures as pictures, tables as PowerPoint tables. The slides' speaker notes are kept.
 }

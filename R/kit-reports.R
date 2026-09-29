@@ -1,23 +1,20 @@
-# The Reports page: the report builder, Quire's (the quire package; this module is its host, reports_server()). A report is a list of blocks plus a design
-# (theme, page) and a cover, kept in the dataset (cache$set_report_project()); cd2030.core draws each chart and table
-# (render_report_block()) and writes the Word or PDF file (export_report(); the PDF is made from the Word file). This
-# module keeps the two in step:
-#   - the component's value is the open report; every edit arrives here and is saved to the dataset,
-#   - each chart and table is drawn here and sent back as a preview ("cd-report-preview"), one at a time so the page
-#     stays responsive. The component gives every chart block a `sig` (what it looks like: its settings and the theme);
-#     a block is redrawn when its sig changes,
-#   - the fields' values ({country}, {anc4_latest}...) are sent as "cd-report-fields" whenever they may have changed,
-#   - buttons (new, open, standard report, duplicate, delete, close, download, final pages) arrive as events on
-#     `studio__action`; a new report is named by the user first (the component asks),
+# The Reports page: the report builder, Quire's (the quire package; this module is its host, reports_server()). A report is
+# a list of blocks plus a design (theme, page) and a cover, kept in the dataset (cache$set_report_project()). The builder
+# edits it and writes its Word, PowerPoint and PDF files in the browser; this module answers what it asks:
+#   - the charts and tables it can draw (kinds) and each one drawn (render: cd_report_render(), as the files draw them),
+#   - the fields' values ({country}, {anc4_latest}...), the standard reports, themes, years, regions and the flag,
+#   - the reports kept in the dataset (list, get, save, delete) and their pictures; a file it wrote is downloaded
+#     through the page's hidden link,
 #   - a page's "Generate report" button (cd_request_report()) asks for a new report from that page's standard report,
 #   - a report has its own language (project$lang), chosen when it is created (the app's language by default): the
 #     standard report's text is written in it, and its charts, tables, dates and file are always drawn in it
 #     (cd_report_translator()), whatever language the app is in. A report saved before this has none and follows the app.
 #   - the AI changes saved reports too (report_update_blocks(), through the app's AI bridge): a change to the open
-#     report is sent to the builder ("cd-report-reload"), which opens it again as saved; the builder saves every edit,
+#     report is sent to the builder ("report.changed"), which opens it again as saved; the builder saves every edit,
 #     so what it had is in the saved report already,
 #   - the builder's AI buttons (write a paragraph, change a block, write the narrative) open DataSuite's chat with a
-#     prompt about the report (type "ask_ai"; .rb_ai_ask_prompt()), for the user to send.
+#     prompt about the report (.rb_ai_ask_prompt()), for the user to send.
+# From R (export_report(), export_deck()) the same writers run through quire::quire_export() (R/report-quire.R).
 
 reports_ui <- function(id, i18n) {
   ns <- NS(id)
@@ -33,42 +30,6 @@ reports_ui <- function(id, i18n) {
 }
 
 # ---- what the component shows ------------------------------------------------------------------------------------
-
-cd_report_texts <- function(i18n) {
-  # every text of the builders: the translations' lbl_rb_* keys (a new text needs only its line in shared.json)
-  keys <- grep("^lbl_rb_", rownames(i18n$get_translations()), value = TRUE)
-  stats::setNames(lapply(keys, function(k) cd_text(i18n, k)), sub("^lbl_rb_", "", keys))
-}
-
-cd_report_studio <- function(inputId, i18n = cd_i18n()) {
-  if (is.null(.chart_schema_cache$schema)) .chart_schema_cache$schema <- cd_chart_schema(i18n)
-  chart_keys <- c(
-    search = "lbl_cc_search", noResults = "lbl_cc_no_results", reset = "lbl_chart_reset", resetGroup = "lbl_cc_reset_group",
-    changed = "lbl_cc_changed", asDrawn = "lbl_chart_style_as_drawn", yes = "lbl_chart_style_yes", no = "lbl_chart_style_no",
-    min = "lbl_chart_style_min", max = "lbl_chart_style_max", entriesLegend = "lbl_chart_style_legend_entries",
-    entriesCategories = "lbl_chart_style_category_entries", entryText = "lbl_chart_style_entry_text",
-    entryColor = "lbl_chart_style_entry_color", show = "lbl_cc_show", hidden = "lbl_cc_hidden"
-  )
-  cd_react_element("ReportStudio", shiny.react::asProps(
-    inputId = inputId,
-    value = NULL,
-    projects = list(),
-    presets = list(),
-    kinds = list(),
-    regions = list(),
-    years = list(),
-    themes = list(),
-    fonts = as.list(report_fonts()),
-    fieldCatalog = cd_report_field_catalog(i18n),
-    flag = NULL,
-    converter = NULL,
-    # the AI buttons work when the app runs in DataSuite (its chat); elsewhere they are disabled, with a hint
-    aiEnabled = .cd_in_datasuite(),
-    chartSchema = list(tabs = .chart_schema_cache$schema$tabs, fields = .chart_schema_cache$schema$fields,
-                       texts = lapply(chart_keys, function(k) cd_text(i18n, k))),
-    texts = cd_report_texts(i18n)
-  ))
-}
 
 # The fields a report's text can contain, labelled in every language
 cd_report_field_catalog <- function(i18n) {
@@ -118,10 +79,6 @@ cd_report_kinds <- function(i18n, cache) {
     )
   })
 }
-
-# What a chart block looks like, as the component computed it (layout.ts blockSig(): its settings and the theme); a
-# preview is sent with the sig it was drawn for. A block the component has not signed yet has none.
-cd_report_sig <- function(b) b$sig %||% ""
 
 cd_report_new_id <- function() paste0("r", format(Sys.time(), "%Y%m%d%H%M%S"), sample.int(999, 1))
 
@@ -412,69 +369,9 @@ reports_server <- function(id, cache, i18n, active = reactive(TRUE)) {
   gsub("[ \t\n]+", " ", prompt)
 }
 
-# One chart or table, drawn as the exported file will draw it (the theme and the report's saved chart styling included).
-# A chart's legend entries come with it, so the builder can recolour or rename them.
-cd_report_preview <- function(cache, b, i18n, sig, design = NULL) {
-  r <- with_report_chart_options(cache, render_report_block(cache, b, i18n, design), design = design)
-  size <- report_block_size(b, design)
-  if (identical(r$type, "plot")) {
-    f <- tempfile(fileext = ".png")
-    on.exit(unlink(f), add = TRUE)
-    ok <- tryCatch({ save_report_chart(r, b, f, dpi = 300, design = design); TRUE }, error = function(e) conditionMessage(e))
-    if (!isTRUE(ok)) return(list(sig = sig, error = ok, w = size[1], h = size[2]))
-    src <- paste0("data:image/png;base64,", jsonlite::base64_enc(readBin(f, "raw", file.info(f)$size)))
-    list(sig = sig, src = src, w = size[1], h = size[2], entries = tryCatch(cd_chart_entries(r$value), error = function(e) list()),
-         # a chart drawn as panels (by year, district...): how, so the builder can change it
-         facets = tryCatch(chart_facet_info(r$value), error = function(e) NULL))
-  } else if (identical(r$type, "table")) {
-    html <- as.character(flextable::htmltools_value(r$value))
-    rows <- tryCatch(flextable::nrow_part(r$value, "body"), error = function(e) 8)
-    list(sig = sig, html = html, w = size[1], h = 0.6 + rows * 0.28)
-  } else {
-    list(sig = sig, error = r$message %||% "", w = size[1], h = size[2])
-  }
-}
-
-# A kind of chart drawn small with its first settings, as a picture for the blocks panel (NULL when it cannot be drawn
-# with this dataset). A kind drawn for one region is drawn for the first.
-cd_report_thumb <- function(cache, kind, i18n, design = NULL) {
-  b <- utils::modifyList(list(id = paste0("thumb_", kind$kind), type = "chart", kind = kind$kind, size = "third"), kind$defaults %||% list())
-  if (identical(b$region, "@report")) b$region <- cd_report_regions(cache)[1]
-  # a thumbnail is too small for text: the chart's shape only, without titles, axis labels, legend or data labels
-  hide <- c("show_title", "show_subtitle", "show_caption", "show_x_title", "show_y_title", "show_x_text", "show_y_text",
-            "show_legend", "show_labels", "show_strips")
-  b$options <- utils::modifyList(b$options %||% list(), stats::setNames(as.list(rep(FALSE, length(hide))), hide))
-  b$caption <- FALSE
-  r <- with_report_chart_options(cache, render_report_block(cache, b, i18n, design), design = design)
-  if (!identical(r$type, "plot")) return(NULL)
-  f <- tempfile(fileext = ".png")
-  on.exit(unlink(f), add = TRUE)
-  ok <- tryCatch({ save_report_chart(r, b, f, dpi = 90, design = design); TRUE }, error = function(e) FALSE)
-  if (!ok || !file.exists(f)) return(NULL)
-  paste0("data:image/png;base64,", jsonlite::base64_enc(readBin(f, "raw", file.info(f)$size)))
-}
-
-# The report's pages as they will be printed: the Word file is written, turned into a PDF by Word or LibreOffice, and each
-# page is sent as a picture
-cd_report_final <- function(cache, project, i18n, message) {
-  if (is.null(project)) return(invisible())
-  project <- cd_report_with_template(cache, project)
-  progress <- function(x) message("cd-report-final", list(status = "running", pct = x))
-  progress(0)
-  result <- tryCatch(report_final_pages(cache, project, i18n = i18n, dpi = 110, progress = progress),
-                     error = function(e) conditionMessage(e))
-  if (is.character(result)) {
-    message("cd-report-final", list(status = "error", message = result, noConverter = is.null(report_converter())))
-    return(invisible())
-  }
-  on.exit(unlink(dirname(result$pdf), recursive = TRUE), add = TRUE)
-  pages <- lapply(result$pages, function(f) paste0("data:image/png;base64,", jsonlite::base64_enc(readBin(f, "raw", file.info(f)$size))))
-  message("cd-report-final", list(status = "done", pages = pages, converter = result$converter))
-}
-
 # A PowerPoint file's slide designs with their pictures (logos, a background photo) kept once in the dataset, as the
-# report's pictures are ("asset:<prefix>_<n>" in `src`): the editor draws them, and cd_report_with_template() writes them
-# out again for the export. A picture over 5 MB is left out.
+# report's pictures are ("asset:<prefix>_<n>" in `src`): the builder and the writers draw them from there. A picture over
+# 5 MB is left out.
 cd_report_designs_store <- function(cache, designs, prefix) {
   if (!is.list(designs)) return(NULL)
   n <- 0
@@ -499,129 +396,17 @@ cd_report_designs_store <- function(cache, designs, prefix) {
   })
 }
 
-# The ids of the slide designs' pictures kept in the dataset
-cd_report_design_asset_ids <- function(designs) {
-  if (!is.list(designs)) return(character())
-  ids <- unlist(lapply(designs, function(d) lapply(if (is.list(d)) d$decor else NULL, function(item) {
-    if (is.character(item$src) && startsWith(item$src, "asset:")) sub("^asset:", "", item$src)
-  })))
-  unique(as.character(ids))
-}
-
-# The slide designs' pictures (kept in the dataset, or data URIs) written to files, as cd2030.core draws them
-cd_report_designs_files <- function(cache, designs) {
-  if (!is.list(designs)) return(designs)
-  lapply(designs, function(d) {
-    if (!is.list(d)) return(d)
-    d$decor <- lapply(d$decor %||% list(), function(item) {
-      src <- item$src
-      if (!identical(item$type, "image") || !is.character(src)) return(item)
-      if (startsWith(src, "asset:")) {
-        asset <- tryCatch(cache$report_assets[[sub("^asset:", "", src)]], error = function(e) NULL)
-        if (is.null(asset)) return(item)
-        ext <- if (grepl("png", asset$type %||% "")) ".png" else if (grepl("gif", asset$type %||% "")) ".gif" else ".jpg"
-        f <- tempfile("slide_design_", fileext = ext)
-        writeBin(asset$data, f)
-        item$file <- f
-        item$src <- NULL
-        return(item)
-      }
-      if (!startsWith(src, "data:")) return(item)
-      ext <- if (grepl("^data:image/png", src)) ".png" else if (grepl("^data:image/gif", src)) ".gif" else ".jpg"
-      f <- tempfile("slide_design_", fileext = ext)
-      writeBin(jsonlite::base64_dec(sub("^data:[^,]*,", "", src)), f)
-      item$file <- f
-      item$src <- NULL
-      item
-    })
-    d
-  })
-}
-
-# A report whose theme came from an Office file: its template, written out for cd2030.core to start from (and its
-# slide designs' pictures)
-cd_report_with_template <- function(cache, project) {
-  if (is.list(project$design$slide_designs)) project$design$slide_designs <- cd_report_designs_files(cache, project$design$slide_designs)
-  tpl <- project$design$template
-  if (!is.character(tpl) || !startsWith(tpl, "asset:")) return(project)
-  asset <- tryCatch(cache$report_assets[[sub("^asset:", "", tpl)]], error = function(e) NULL)
-  if (is.null(asset)) {
-    project$design$template <- NULL
-    return(project)
-  }
-  path <- tempfile(fileext = paste0(".", project$design$template_ext %||% project$design$template_kind %||% "pptx"))
-  writeBin(asset$data, path)
-  project$design$template <- path
-  project
-}
-
-cd_report_export <- function(session, cache, project, format, i18n, translator, message, state) {
-  if (is.null(project)) return(invisible())
-  project <- cd_report_with_template(cache, project)
-  # a document is written as Word or PDF, a slide deck as PowerPoint or PDF
-  format <- if (isTRUE(format %in% c("docx", "pdf", "pptx"))) format else "docx"
-  if (cd_report_is_deck(project) && format == "docx") format <- "pptx"
-  if (!cd_report_is_deck(project) && format == "pptx") format <- "docx"
-  stages <- list(draw = "lbl_rb_stage_draw", write = switch(format, pdf = "lbl_rb_stage_pdf", pptx = "lbl_rb_stage_pptx", "lbl_rb_stage_word"))
-  progress <- function(x) {
-    message("cd-report-export", list(status = "running", format = format, pct = x,
-                                      stage = cd_text(i18n, if (x < 0.8) stages$draw else stages$write)))
-  }
-  country <- tryCatch(cache$country, error = function(e) "") %||% ""
-  file <- tempfile(fileext = paste0(".", format))
-  made_by <- NULL
-  result <- tryCatch({
-    made_by <- attr(export_report(cache, project, file, format = format, i18n = translator, progress = progress), "converter")
-    TRUE
-  }, error = function(e) conditionMessage(e))
-  if (!isTRUE(result)) {
-    message("cd-report-export", list(status = "error", format = format, message = result))
-    return(invisible())
-  }
-  name <- gsub("[^A-Za-z0-9]+", "_", paste(country, project$name))
-  state$file <- file
-  state$file_name <- paste0(gsub("^_|_$", "", name), "_", format(Sys.Date()), ".", format)
-  url <- paste0("session/", session$token, "/download/", session$ns("file"), "?w=")
-  message("cd-report-export", list(status = "done", format = format, url = url, fileName = state$file_name, madeBy = made_by))
-}
-
 # The dataset's regions (admin level 1), sorted
 cd_report_regions <- function(cache) {
   tryCatch(sort(unique(cache$subnational_regions$adminlevel_1)), error = function(e) character())
 }
-
-# A short key for "has this changed"
-cd_report_key <- function(x) paste(utils::capture.output(dput(x)), collapse = "")
 
 # One chart or table for the builder (a quire render request: the block, the report's design and language, its
 # region, the size in inches), drawn as the exported file draws it (the theme and the report's saved chart styling).
 # A chart comes as a picture with its legend entries and panels (the builder recolours, renames, re-arranges them); a
 # table as its cells (flextable's text as formatted), which the builder draws in its Table Design style.
 cd_report_render <- function(cache, request, i18n) {
-  b <- request$block
-  if (!is.list(b)) return(quire::quire_error("No block to draw."))
-  design <- request$design
-  b <- report_resolve_block(b, list(region = request$region), cd_report_regions(cache))
-  translator <- cd_report_translator(i18n, request$lang %||% "en")
-  r <- tryCatch(with_report_chart_options(cache, render_report_block(cache, b, translator, design), design = design),
-                error = function(e) list(type = "error", message = conditionMessage(e)))
-  size <- report_block_size(b, design)
-  if (identical(r$type, "plot")) {
-    f <- tempfile(fileext = ".png")
-    on.exit(unlink(f), add = TRUE)
-    dpi <- if (identical(request$purpose, "export")) 300 else 200
-    ok <- tryCatch({ save_report_chart(r, b, f, dpi = dpi, design = design); TRUE }, error = function(e) conditionMessage(e))
-    if (!isTRUE(ok)) return(quire::quire_error(ok))
-    list(kind = "image", src = paste0("data:image/png;base64,", jsonlite::base64_enc(readBin(f, "raw", file.info(f)$size))),
-         w = size[1], h = size[2],
-         entries = tryCatch(cd_chart_entries(r$value), error = function(e) NULL),
-         # a chart drawn as panels (by year, district...): how, so the builder can change it
-         facets = tryCatch(chart_facet_info(r$value), error = function(e) NULL))
-  } else if (identical(r$type, "table")) {
-    cd_flextable_render(r$value)
-  } else {
-    quire::quire_error(r$message %||% "")
-  }
+  .rb_render_request(cache, request, cd_report_translator(i18n, request$lang %||% "en"), cd_report_regions(cache))
 }
 
 # A flextable as the builder's table: its header rows (merged cells spanning), its body rows (each cell's text as
