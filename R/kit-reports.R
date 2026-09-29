@@ -1,4 +1,4 @@
-# The Reports page: the report builder (js/src/components/ReportStudio.tsx). A report is a list of blocks plus a design
+# The Reports page: the report builder, Quire's (the quire package; this module is its host, reports_server()). A report is a list of blocks plus a design
 # (theme, page) and a cover, kept in the dataset (cache$set_report_project()); cd2030.core draws each chart and table
 # (render_report_block()) and writes the Word or PDF file (export_report(); the PDF is made from the Word file). This
 # module keeps the two in step:
@@ -23,10 +23,11 @@ reports_ui <- function(id, i18n) {
   ns <- NS(id)
   cd_page_ui(
     id, i18n,
-    cd_report_studio(ns("studio"), i18n),
+    # the report builder is Quire's (the quire package): this module is its host (reports_server())
+    quire::quire_ui(ns("studio"), aiEnabled = .cd_in_datasuite()),
     # the dataset's reference documents: context the AI reads for reports (kit-documents.R)
     documents_card_ui(ns("documents"), i18n),
-    # the file a download writes is served through this (hidden) link's handler
+    # a file the builder writes is served through this (hidden) link's handler
     div(style = "display: none", downloadLink(ns("file"), ""))
   )
 }
@@ -157,345 +158,204 @@ cd_report_summary <- function(projects) {
 
 # ---- server ------------------------------------------------------------------------------------------------------
 
+# The Reports page as Quire's host (quire::quire_host()): the builder asks, this answers from the dataset. It asks
+# what can be drawn (cd_report_kinds()), draws each chart and table (render_report_block(), in the report's own
+# language), gives the text fields, the standard reports, the themes, the years and regions, and keeps the reports
+# and their pictures in the dataset. The builder does the rest (editing, pages, the Word, PowerPoint and PDF files,
+# the AI's reading and editing). This module also tells the builder what changes here:
+#   - a new dataset: its charts are drawn again ("data.changed"),
+#   - the dataset's reports changed elsewhere (the AI saved or changed one): the list follows, and the open report,
+#     when it is not what the builder last saved, is sent to open again ("report.changed"),
+#   - a page's "Generate report" (cd_request_report()): the report is made from that page's standard report and
+#     opened ("report.open"),
+#   - the app's language ("lang").
+# The builder's AI buttons open DataSuite's chat with a prompt about the report (its "ai.ask").
 reports_server <- function(id, cache, i18n, active = reactive(TRUE)) {
   moduleServer(id, function(input, output, session) {
     documents_card_server("documents", i18n)
-    studio_id <- session$ns("studio")
     state <- reactiveValues(open = NULL, project = NULL, file = NULL, file_name = NULL)
-    drawn <- new.env(parent = emptyenv())   # block id -> signature already sent
-    queue <- reactiveVal(list())
 
-    message <- function(type, payload) session$sendCustomMessage(type, c(list(id = studio_id), payload))
-    push <- function(...) cd_update_input("studio", session, ...)
-    # a report saved without its own id (reports the AI saved before cd2030.core 1.3.4) takes the key it is stored
-    # under: the builder saves by the report's id, so without one every edit failed to save
+    # a report saved without its own id (reports the AI saved before cd2030.core 1.3.4) takes the key it is stored under
     projects <- function() {
-      ps <- tryCatch(cache()$report_projects, error = function(e) list()) %||% list()
+      ps <- tryCatch(isolate(cache())$report_projects, error = function(e) list()) %||% list()
       for (key in names(ps)) {
         if (is.list(ps[[key]]) && !(is.character(ps[[key]]$id) && length(ps[[key]]$id) == 1 && nzchar(ps[[key]]$id))) ps[[key]]$id <- key
       }
       ps
     }
-
-    # the app's language, and the translator a report is drawn with: in the report's own language
     lang <- reactive(if (isTruthy(cache())) cache()$language %||% "en" else "en")
-    report_lang <- function(project = isolate(state$project)) project$lang %||% isolate(lang())
-    tr <- function(project = isolate(state$project)) cd_report_translator(i18n, report_lang(project))
+    tr <- function(l) cd_report_translator(i18n, l %||% isolate(lang()))
+    save <- function(project) {
+      project$updated <- format(Sys.time(), "%Y-%m-%d %H:%M")
+      isolate(cache())$set_report_project(project$id, project)
+      project
+    }
+    # a new report from a standard report, with new ids for its blocks (and slides)
+    from_preset <- function(key, l, name = NULL) {
+      preset <- .ds_report_presets(l)[[key]]
+      if (is.null(preset)) stop(sprintf("There is no standard report %s.", key))
+      suffix <- function(x) paste0(x, "_", sample.int(1e6, 1))
+      p <- list(id = cd_report_new_id(), name = if (is.character(name) && nzchar(trimws(name))) trimws(name) else preset$name,
+                lang = l, design = preset$design, cover = preset$cover,
+                region = if (any(vapply(cd_report_blocks(preset), function(b) identical(b$region, "@report"), logical(1)))) cd_report_regions(isolate(cache()))[1],
+                blocks = lapply(preset$blocks %||% list(), function(b) { b$id <- suffix(b$id); b }))
+      if (identical(preset$kind, "deck")) {
+        p$kind <- "deck"
+        p$slides <- lapply(preset$slides %||% list(), function(s) {
+          s$id <- suffix(s$id %||% "s")
+          s$items <- lapply(s$items %||% list(), function(it) {
+            it$id <- suffix(it$id %||% "i")
+            it$block$id <- it$id
+            it
+          })
+          s
+        })
+      }
+      p
+    }
+    data_url_asset <- function(url) {
+      if (!is.character(url) || !startsWith(url, "data:")) return(NULL)
+      list(type = sub("^data:([^;,]+).*$", "\\1", url), data = sub("^data:[^,]*,", "", url))
+    }
+    chart_keys <- c(
+      search = "lbl_cc_search", noResults = "lbl_cc_no_results", reset = "lbl_chart_reset", resetGroup = "lbl_cc_reset_group",
+      changed = "lbl_cc_changed", asDrawn = "lbl_chart_style_as_drawn", yes = "lbl_chart_style_yes", no = "lbl_chart_style_no",
+      min = "lbl_chart_style_min", max = "lbl_chart_style_max", entriesLegend = "lbl_chart_style_legend_entries",
+      entriesCategories = "lbl_chart_style_category_entries", entryText = "lbl_chart_style_entry_text",
+      entryColor = "lbl_chart_style_entry_color", show = "lbl_cc_show", hidden = "lbl_cc_hidden"
+    )
 
-    # a page's "Generate report" (cd_request_report()): list(preset, nonce), passed to the component, which asks for the
-    # new report's name
-    request <- reactiveVal(NULL)
-    session$userData$cd_report_request <- request
-
-    # Everything the component shows besides the open report, in ONE update: two updates to the same input in one
-    # flush do not both arrive (the second replaces the first).
-    push_home <- function(extra = list()) {
-      presets <- .ds_report_presets(isolate(lang()))
-      regions <- cd_report_regions(cache())
-      years <- cache()$data_years
-      props <- list(
-        projects = cd_report_summary(projects()),
-        presets = lapply(names(presets), function(k) list(
-          id = k,
-          name = presets[[k]]$name,
-          description = presets[[k]]$description,
-          kind = presets[[k]]$kind %||% "document",
-          charts = sum(vapply(cd_report_blocks(presets[[k]]), function(b) isTRUE(b$type %in% c("chart", "table")), logical(1)))
-        )),
-        # what a new report's name is made from
-        suggest = list(country = tryCatch(cache()$country, error = function(e) "") %||% "",
-                       year = if (length(years)) as.character(max(years)) else ""),
-        request = isolate(request()),
-        kinds = cd_report_kinds(i18n, cache()),
-        regions = as.list(regions),
-        years = as.list(cache()$data_years),
-        themes = c(
+    host <- quire::quire_host(
+      kinds = function() cd_report_kinds(i18n, isolate(cache())),
+      render = function(request) cd_report_render(isolate(cache()), request, i18n),
+      fields = function(project, lang) report_fields(isolate(cache()), project, lang = lang %||% isolate(lang())),
+      fieldCatalog = function() cd_report_field_catalog(i18n),
+      presets = function(lang) {
+        ps <- .ds_report_presets(lang %||% isolate(lang()))
+        lapply(names(ps), function(k) list(
+          id = k, name = ps[[k]]$name, description = ps[[k]]$description, kind = ps[[k]]$kind %||% "document",
+          charts = sum(vapply(cd_report_blocks(ps[[k]]), function(b) isTRUE(b$type %in% c("chart", "table")), logical(1)))
+        ))
+      },
+      preset = function(id, lang, name) from_preset(id, lang %||% isolate(lang()), name),
+      themes = function() {
+        c(
           unname(lapply(report_themes(), function(th) {
             th$name <- cd_text(i18n, paste0("lbl_rb_theme_", th$theme))
             th$palette <- as.list(th$palette)
             th
           })),
-          # made from Office files (their template is kept in the dataset)
-          unname(lapply(tryCatch(cache()$report_themes, error = function(e) list()) %||% list(), function(th) {
+          unname(lapply(tryCatch(isolate(cache())$report_themes, error = function(e) list()) %||% list(), function(th) {
             th$palette <- as.list(th$palette)
             th
           }))
-        ),
-        flag = cd_report_flag(cache()),
-        converter = report_converter(),
-        layouts = tryCatch(unname(report_deck_layouts()), error = function(e) list())
-      )
-      # what the caller adds replaces the same fields (a NULL too: value = NULL closes the open report)
-      for (name in names(extra)) props[name] <- list(extra[[name]])
-      do.call(push, props)
-    }
-
-    # the fields' values for the open report; sent again when what they depend on (name, cover) changes
-    fields_key <- reactiveVal(NULL)
-    send_fields <- function(project) {
-      key <- cd_report_key(list(report_lang(project), project$name, project$region, project$cover$editors, project$cover$date_mode, project$cover$date, project$cover$reference))
-      if (identical(key, isolate(fields_key()))) return(invisible())
-      fields_key(key)
-      message("cd-report-fields", list(fields = report_fields(cache(), project, lang = report_lang(project))))
-    }
-
-    # what the component needs about the dataset and its reports
-    observeEvent(list(cache(), active(), input$studio__mounted), {
-      req(cache(), active())
-      push_home()
-    }, ignoreNULL = FALSE)
-
-    # a new app language: the standard reports' names in it (and an open report that has no language of its own follows it)
-    observeEvent(lang(), {
-      req(cache(), active())
-      push_home()
-      if (!is.null(state$project) && is.null(state$project$lang)) {
-        fields_key(NULL)
-        send_fields(state$project)
+        )
+      },
+      years = function() isolate(cache())$data_years,
+      regions = function() cd_report_regions(isolate(cache())),
+      flag = function() cd_report_flag(isolate(cache())),
+      chartSchema = function() {
+        if (is.null(.chart_schema_cache$schema)) .chart_schema_cache$schema <- cd_chart_schema(i18n)
+        list(tabs = .chart_schema_cache$schema$tabs, fields = .chart_schema_cache$schema$fields,
+             texts = lapply(chart_keys, function(k) cd_text(i18n, k)))
+      },
+      listReports = function() {
+        rows <- cd_report_summary(projects())
+        lapply(rows, function(r) { r$order <- NULL; r })
+      },
+      getReport = function(id) projects()[[id]],
+      saveReport = function(project) {
+        if (!is.list(project) || !is.character(project$id)) stop("A report to save has an id.")
+        state$project <- save(project)
+        invisible(NULL)
+      },
+      deleteReport = function(id) {
+        isolate(cache())$set_report_project(id, NULL)
+        invisible(NULL)
+      },
+      assetGet = function(id) data_url_asset(report_asset_data_url(isolate(cache()), id)),
+      assetSet = function(id, asset) {
+        report_store_asset(isolate(cache()), id, paste0("data:", asset$type %||% "image/png", ";base64,", asset$data))
+        invisible(NULL)
+      },
+      # a PowerPoint or Word file (template or document) made into a theme; the file is kept, and exports are written
+      # from it
+      themeFromFile = function(name, data) {
+        ext <- tolower(tools::file_ext(name %||% ""))
+        if (!ext %in% c("potx", "pptx", "dotx", "docx")) stop(cd_plain_text(i18n, "lbl_rb_themeFileKinds", isolate(lang())))
+        bytes <- jsonlite::base64_dec(sub("^data:[^,]*,", "", data %||% ""))
+        path <- tempfile(fileext = paste0(".", ext))
+        writeBin(bytes, path)
+        th <- report_theme_from_file(path, name = tools::file_path_sans_ext(basename(name)))
+        asset <- paste0("tpl_", th$theme)
+        isolate(cache())$set_report_asset(asset, list(type = "application/octet-stream", data = bytes))
+        th$template <- paste0("asset:", asset)
+        th$template_ext <- ext
+        th$slide_designs <- cd_report_designs_store(isolate(cache()), th$slide_designs, asset)
+        isolate(cache())$set_report_theme(th$theme, th)
+        th$palette <- as.list(th$palette)
+        th
+      },
+      # a Word, PowerPoint or PDF file the builder wrote: kept here and downloaded through the page's (hidden) link, which
+      # reaches the reader in DataSuite's window as in a browser
+      saveFile = function(file) {
+        ext <- tolower(tools::file_ext(file$name %||% "report.docx"))
+        path <- tempfile(fileext = paste0(".", ext))
+        writeBin(jsonlite::base64_dec(file$data %||% ""), path)
+        country <- tryCatch(isolate(cache())$country, error = function(e) "") %||% ""
+        base <- gsub("[^A-Za-z0-9]+", "_", paste(country, tools::file_path_sans_ext(file$name %||% "report")))
+        state$file <- path
+        state$file_name <- paste0(gsub("^_|_$", "", base), "_", format(Sys.Date()), ".", ext)
+        list(path = state$file_name, url = paste0("session/", session$token, "/download/", session$ns("file"), "?w="))
       }
-    }, ignoreInit = TRUE)
+    )
 
-    # a page asked for a report from its standard report
-    observeEvent(request(), {
-      req(cache())
-      push_home(list(request = request()))
-    }, ignoreInit = TRUE)
+    studio <- quire::quire_server("studio", host, on_event = function(name, data) {
+      if (identical(name, "report.opened")) {
+        id <- data$project
+        state$open <- if (is.character(id) && length(id) == 1) id else NULL
+        state$project <- if (!is.null(state$open)) projects()[[state$open]]
+      } else if (identical(name, "ai.ask")) {
+        # an AI button of the builder: DataSuite's chat opens with a prompt about the report, in the app's language
+        p <- isolate(state$project) %||% projects()[[isolate(state$open) %||% ""]]
+        prompt <- if (is.character(data$prompt) && nzchar(data$prompt)) data$prompt else if (!is.null(p)) .rb_ai_ask_prompt(data, p, i18n, isolate(lang()))
+        if (!is.null(prompt)) .ai_host_request("openChat", query = prompt)
+      }
+    })
 
-    # a new dataset closes the open report (and its charts are drawn again for the blocks panel)
+    # a new dataset: its charts are drawn again, its reports listed
     observeEvent(cache(), {
       state$open <- NULL
-      push(value = NULL)
-      rm(list = ls(thumbs), envir = thumbs)
-      thumb_queue(list())
+      studio$send("data.changed")
+      studio$send("reports.changed")
     }, ignoreInit = TRUE)
 
-    # the dataset's reports changed elsewhere (the AI saved or changed one): the list follows, and the open report, when
-    # it is not what the builder last saved, is sent to it to open again (the builder saves every edit, so nothing of
-    # the user's is lost)
+    # the app's language: the builder's follows
+    observeEvent(lang(), studio$send("lang", list(lang = lang())), ignoreInit = TRUE)
+
+    # the dataset's reports changed elsewhere (the AI saved or changed one): the list follows, and the open report,
+    # when it is not what the builder last saved, is sent to it to open again (the builder saves every edit, so nothing
+    # of the user's is lost)
     observeEvent(tryCatch(cache()$report_projects, error = function(e) NULL), {
       req(cache(), active())
-      open <- state$open
-      if (is.null(open)) return(push_home())
+      studio$send("reports.changed")
+      open <- isolate(state$open)
+      if (is.null(open)) return()
       stored <- projects()[[open]]
-      if (is.null(stored)) {
-        state$open <- NULL
-        return(push_home(list(value = NULL)))
-      }
-      if (identical(stored, isolate(state$project))) return()
+      if (is.null(stored) || identical(stored, isolate(state$project))) return()
       state$project <- stored
-      message("cd-report-reload", list(project = stored))
-      send_fields(stored)
-      send_assets(stored)
+      studio$send("report.changed", list(project = stored))
     }, ignoreInit = TRUE, ignoreNULL = FALSE)
 
-    save <- function(project) {
-      project$updated <- format(Sys.time(), "%Y-%m-%d %H:%M")
-      cache()$set_report_project(project$id, project)
-      project
-    }
-
-    # the component signs the blocks (see cd_report_sig()) and sends the report back straight away, which queues the
-    # previews of a new report; a saved report's blocks are signed already, and are queued here (sending the same report
-    # again would not reach the server: Shiny drops a value equal to the last one)
-    open_project <- function(project) {
-      state$open <- project$id
-      state$project <- project
-      rm(list = ls(drawn), envir = drawn)
-      queue(list())
-      fields_key(NULL)
-      message("cd-report-preview", list(reset = TRUE))
-      push_home(list(value = project))
-      send_fields(project)
-      send_assets(project)
-      queue_previews(cd_report_blocks(project))
-      queue_thumbs()
-    }
-
-    # ---- the blocks panel's pictures: each kind of chart drawn small with its first settings, once per dataset, one
-    # per turn of the event loop and only when the open report's previews are drawn
-    thumbs <- new.env()
-    thumb_queue <- reactiveVal(list())
-    queue_thumbs <- function() {
-      done <- ls(thumbs)
-      ready <- Filter(nzchar, mget(done, envir = thumbs))
-      if (length(ready)) message("cd-report-thumbs", list(thumbs = ready))
-      kinds <- cd_report_kinds(i18n, isolate(cache()))
-      # (not the Bayesian model: drawing it fits the model, which takes a while)
-      thumb_queue(Filter(function(k) identical(k$type, "chart") && !(k$kind %in% c(done, "bayes_coverage")), kinds))
-    }
-    observe({
-      q <- thumb_queue()
-      if (!length(q) || length(queue())) return()
-      k <- q[[1]]
-      isolate(thumb_queue(q[-1]))
-      if (exists(k$kind, envir = thumbs, inherits = FALSE)) return()
-      project <- isolate(state$project)
-      src <- tryCatch(cd_report_thumb(isolate(cache()), k, tr(project), project$design), error = function(e) NULL)
-      assign(k$kind, src %||% "", envir = thumbs)
-      if (!is.null(src)) message("cd-report-thumbs", list(thumbs = stats::setNames(list(src), k$kind)))
-    })
-
-    # the pictures a report uses are kept once in the dataset (cache$set_report_asset()); the builder gets them when the
-    # report opens, and keeps the ones it adds
-    send_assets <- function(project) {
-      ids <- unique(c(unlist(lapply(cd_report_blocks(project), function(b) {
-        if (identical(b$type, "image") && is.character(b$src) && startsWith(b$src, "asset:")) sub("^asset:", "", b$src)
-      })), cd_report_design_asset_ids(project$design$slide_designs)))
-      if (!length(ids)) return(invisible())
-      urls <- lapply(ids, function(i) report_asset_data_url(cache(), i))
-      keep <- !vapply(urls, is.null, logical(1))
-      if (any(keep)) message("cd-report-assets", list(assets = stats::setNames(urls[keep], ids[keep])))
-    }
-
-    # the pictures of a theme's slide designs (logos, a background photo), for the editor to draw
-    send_design_assets <- function(designs) {
-      ids <- cd_report_design_asset_ids(designs)
-      if (!length(ids)) return(invisible())
-      urls <- lapply(ids, function(i) report_asset_data_url(cache(), i))
-      keep <- !vapply(urls, is.null, logical(1))
-      if (any(keep)) message("cd-report-assets", list(assets = stats::setNames(urls[keep], ids[keep])))
-    }
-
-    queue_previews <- function(blocks) {
-      todo <- Filter(function(b) {
-        isTRUE(b$type %in% c("chart", "table")) && nzchar(cd_report_sig(b)) && !identical(drawn[[b$id]], cd_report_sig(b))
-      }, blocks)
-      queue(c(isolate(queue()), todo))
-    }
-
-    # the builder's edits: save, and redraw what changed
-    observeEvent(input$studio, {
-      p <- input$studio
-      req(cache(), is.list(p), identical(p$id, state$open))
-      state$project <- save(p)
-      message("cd-report-saved", list())
-      send_fields(p)
-      queue_previews(cd_report_blocks(p))
-    }, ignoreNULL = TRUE)
-
-    # draw one queued preview per turn of the event loop, so the page stays responsive and previews arrive one by one
-    observe({
-      q <- queue()
-      if (!length(q)) return()
-      b <- q[[1]]
-      rest <- q[-1]
-      sig <- cd_report_sig(b)
-      if (!identical(drawn[[b$id]], sig)) {
-        drawn[[b$id]] <- sig
-        project <- isolate(state$project)
-        b <- report_resolve_block(b, project, cd_report_regions(isolate(cache())))
-        preview <- cd_report_preview(isolate(cache()), b, tr(project), sig, project$design)
-        message("cd-report-preview", list(previews = stats::setNames(list(preview), b$id)))
-      }
-      # later blocks of a changed chart replace earlier ones for the same block
-      isolate(queue(Filter(function(x) !identical(x$id, b$id) || !identical(cd_report_sig(x), sig), rest)))
-    })
-
-    # buttons
-    observeEvent(input$studio__action, {
-      a <- input$studio__action
+    # a page's "Generate report" (cd_request_report()): list(preset, nonce); the report is made and opened
+    request <- reactiveVal(NULL)
+    session$userData$cd_report_request <- request
+    observeEvent(request(), {
       req(cache())
-      type <- a$type %||% ""
-      # the name and the language the user gave the new report
-      named <- function(fallback) if (is.character(a$name) && nzchar(trimws(a$name))) trimws(a$name) else fallback
-      new_lang <- if (isTRUE(a$lang %in% c("en", "fr", "pt"))) a$lang else isolate(lang())
-      if (type == "new" && identical(a$kind, "deck")) {
-        # a blank slide deck (16:9); the editor gives it its title slide
-        design <- utils::modifyList(report_default_design(), list(slide_size = "16:9", cover = FALSE, contents = FALSE))
-        p <- list(id = cd_report_new_id(), name = named(cd_plain_text(i18n, "lbl_rb_untitledDeck", new_lang)), lang = new_lang,
-                  kind = "deck", design = design, cover = report_default_cover(), blocks = list(), slides = list())
-        open_project(save(p))
-      } else if (type == "new") {
-        p <- list(id = cd_report_new_id(), name = named(cd_plain_text(i18n, "lbl_rb_untitled", new_lang)), lang = new_lang,
-                  design = report_default_design(), cover = report_default_cover(),
-                  blocks = list(list(id = "b1", type = "paragraph", text = "")))
-        open_project(save(p))
-      } else if (type == "preset") {
-        preset <- .ds_report_presets(new_lang)[[a$preset]]
-        req(preset)
-        suffix <- function(x) paste0(x, "_", sample.int(1e6, 1))
-        p <- list(id = cd_report_new_id(), name = named(preset$name), lang = new_lang, design = preset$design,
-                  cover = preset$cover,
-                  # a national report, unless its blocks are drawn for one region (the one-pager)
-                  region = if (any(vapply(cd_report_blocks(preset), function(b) identical(b$region, "@report"), logical(1)))) cd_report_regions(cache())[1],
-                  blocks = lapply(preset$blocks %||% list(), function(b) { b$id <- suffix(b$id); b }))
-        if (identical(preset$kind, "deck")) {
-          # a standard slide deck: its slides and their items, each with a new id
-          p$kind <- "deck"
-          p$slides <- lapply(preset$slides %||% list(), function(s) {
-            s$id <- suffix(s$id %||% "s")
-            s$items <- lapply(s$items %||% list(), function(it) {
-              it$id <- suffix(it$id %||% "i")
-              it$block$id <- it$id
-              it
-            })
-            s
-          })
-        }
-        open_project(save(p))
-      } else if (type == "open") {
-        p <- projects()[[a$project]]
-        req(p)
-        open_project(p)
-      } else if (type == "duplicate") {
-        p <- projects()[[a$project]]
-        req(p)
-        p$id <- cd_report_new_id()
-        p$name <- paste(p$name, cd_plain_text(i18n, "lbl_rb_copy", report_lang(p)))
-        save(p)
-        push_home()
-      } else if (type == "delete") {
-        cache()$set_report_project(a$project, NULL)
-        push_home()
-      } else if (type == "close") {
-        state$open <- NULL
-        push_home(list(value = NULL))
-      } else if (type == "asset" || type == "asset_url") {
-        # a picture added in the builder (a file it read, or a web address to download now)
-        stored <- tryCatch(report_store_asset(cache(), a$asset, if (type == "asset") a$src else a$url),
-                           error = function(e) conditionMessage(e))
-        if (is.character(stored)) {
-          message("cd-report-assets", list(failed = list(id = a$asset, message = stored)))
-        } else if (type == "asset_url") {
-          message("cd-report-assets", list(assets = stats::setNames(list(stored$url), stored$id), done = list(id = stored$id, ratio = stored$ratio)))
-        }
-      } else if (type == "theme_file") {
-        # a PowerPoint or Word file (template or document) made into a theme; the file is kept, and exports are written
-        # from it
-        result <- tryCatch({
-          ext <- tolower(tools::file_ext(a$name %||% ""))
-          if (!ext %in% c("potx", "pptx", "dotx", "docx")) stop(cd_plain_text(i18n, "lbl_rb_themeFileKinds", report_lang()))
-          data <- jsonlite::base64_dec(sub("^data:[^,]*,", "", a$data %||% ""))
-          path <- tempfile(fileext = paste0(".", ext))
-          writeBin(data, path)
-          th <- report_theme_from_file(path, name = tools::file_path_sans_ext(basename(a$name)))
-          asset <- paste0("tpl_", th$theme)
-          cache()$set_report_asset(asset, list(type = "application/octet-stream", data = data))
-          th$template <- paste0("asset:", asset)
-          th$template_ext <- ext
-          th$slide_designs <- cd_report_designs_store(cache(), th$slide_designs, asset)
-          cache()$set_report_theme(th$theme, th)
-          th
-        }, error = function(e) conditionMessage(e))
-        if (is.character(result)) {
-          message("cd-report-theme", list(failed = result))
-        } else {
-          push_home()
-          result$palette <- as.list(result$palette)
-          send_design_assets(result$slide_designs)
-          message("cd-report-theme", list(theme = result))
-        }
-      } else if (type == "export") {
-        cd_report_export(session, cache(), projects()[[state$open]], a$format %||% "docx", i18n, tr(projects()[[state$open]]), message, state)
-      } else if (type == "final") {
-        cd_report_final(cache(), projects()[[state$open]], tr(projects()[[state$open]]), message)
-      } else if (type == "ask_ai") {
-        # an AI button of the builder: DataSuite's chat opens with a prompt about the report, in the app's language
-        p <- isolate(state$project) %||% projects()[[state$open %||% ""]]
-        req(p)
-        .ai_host_request("openChat", query = .rb_ai_ask_prompt(a, p, i18n, isolate(lang())))
-      }
-    })
+      a <- request()
+      p <- tryCatch(save(from_preset(a$preset, isolate(lang()), a$name)), error = function(e) NULL)
+      if (!is.null(p)) studio$send("report.open", list(id = p$id))
+    }, ignoreInit = TRUE)
 
     output$file <- downloadHandler(
       filename = function() state$file_name %||% "report.docx",
@@ -732,3 +592,65 @@ cd_report_regions <- function(cache) {
 
 # A short key for "has this changed"
 cd_report_key <- function(x) paste(utils::capture.output(dput(x)), collapse = "")
+
+# One chart or table for the builder (a quire render request: the block, the report's design and language, its
+# region, the size in inches), drawn as the exported file draws it (the theme and the report's saved chart styling).
+# A chart comes as a picture with its legend entries and panels (the builder recolours, renames, re-arranges them); a
+# table as its cells (flextable's text as formatted), which the builder draws in its Table Design style.
+cd_report_render <- function(cache, request, i18n) {
+  b <- request$block
+  if (!is.list(b)) return(quire::quire_error("No block to draw."))
+  design <- request$design
+  b <- report_resolve_block(b, list(region = request$region), cd_report_regions(cache))
+  translator <- cd_report_translator(i18n, request$lang %||% "en")
+  r <- tryCatch(with_report_chart_options(cache, render_report_block(cache, b, translator, design), design = design),
+                error = function(e) list(type = "error", message = conditionMessage(e)))
+  size <- report_block_size(b, design)
+  if (identical(r$type, "plot")) {
+    f <- tempfile(fileext = ".png")
+    on.exit(unlink(f), add = TRUE)
+    dpi <- if (identical(request$purpose, "export")) 300 else 200
+    ok <- tryCatch({ save_report_chart(r, b, f, dpi = dpi, design = design); TRUE }, error = function(e) conditionMessage(e))
+    if (!isTRUE(ok)) return(quire::quire_error(ok))
+    list(kind = "image", src = paste0("data:image/png;base64,", jsonlite::base64_enc(readBin(f, "raw", file.info(f)$size))),
+         w = size[1], h = size[2],
+         entries = tryCatch(cd_chart_entries(r$value), error = function(e) NULL),
+         # a chart drawn as panels (by year, district...): how, so the builder can change it
+         facets = tryCatch(chart_facet_info(r$value), error = function(e) NULL))
+  } else if (identical(r$type, "table")) {
+    cd_flextable_render(r$value)
+  } else {
+    quire::quire_error(r$message %||% "")
+  }
+}
+
+# A flextable as the builder's table: its header rows (merged cells spanning), its body rows (each cell's text as
+# flextable formats it, and its number when the column holds numbers) and its footer as the note under it
+cd_flextable_render <- function(ft) {
+  chunks <- flextable::information_data_chunk(ft)
+  keys <- ft$col_keys
+  part <- function(name) {
+    d <- chunks[chunks$.part == name, , drop = FALSE]
+    if (!nrow(d)) return(list())
+    spans <- tryCatch(ft[[name]]$spans$rows, error = function(e) NULL)
+    data <- ft[[name]]$dataset
+    lapply(sort(unique(d$.row_id)), function(i) {
+      cells <- list()
+      for (j in seq_along(keys)) {
+        span <- if (!is.null(spans) && nrow(spans) >= i) spans[i, j] else 1
+        if (identical(span, 0L) || identical(span, 0)) next
+        cell <- list(text = paste(d$txt[d$.row_id == i & d$.col_id == keys[j]], collapse = ""))
+        if (span > 1) cell$span <- as.integer(span)
+        v <- if (identical(name, "body") && !is.null(data[[keys[j]]])) data[[keys[j]]][i]
+        if (is.numeric(v) && length(v) == 1 && !is.na(v)) cell$value <- v
+        cells[[length(cells) + 1]] <- cell
+      }
+      cells
+    })
+  }
+  footer <- part("footer")
+  note <- if (length(footer)) paste(unique(unlist(lapply(footer, function(r) vapply(r, function(c) c$text, character(1))))), collapse = " ")
+  out <- list(kind = "table", header = part("header"), rows = part("body"))
+  if (is.character(note) && nzchar(note)) out$footer <- note
+  out
+}

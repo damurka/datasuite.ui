@@ -246,15 +246,15 @@ test_that("the Reports page opens the open report again when it changes elsewher
   cache <- shiny::reactiveVal(ds)
   local_mocked_bindings(report_converter = function() NULL)
   shiny::testServer(reports_server, args = list(cache = cache, i18n = i18n, active = shiny::reactive(TRUE)), {
-    session$setInputs(studio__action = list(type = "open", project = "r1", nonce = 1))
+    # the builder (Quire) says which report it opened, then saves an edit through the host
+    session$setInputs(`studio-quire` = list(kind = "event", name = "report.opened", data = list(project = "r1")))
     expect_identical(state$open, "r1")
-    # the builder saves an edit: nothing is sent back
     edited <- state$project
     edited$blocks[[4]]$text <- "Typed by the user"
-    session$setInputs(studio = edited)
+    session$setInputs(`studio-quire` = list(kind = "call", id = "c1", method = "saveReport", args = list(project = edited)))
     expect_identical(state$project$blocks[[4]]$text, "Typed by the user")
     saved <- state$project
-    # the AI changes the report: the page takes the saved report
+    # the AI changes the report: the page takes the saved report (and sends it to the builder to open again)
     changed <- report_update_blocks(projects()$r1, list(list(blockId = "p1", text = "Written by the AI")), kinds = ai_kinds)$project
     ds$set_report_project("r1", changed)
     session$flushReact()
@@ -262,4 +262,20 @@ test_that("the Reports page opens the open report again when it changes elsewher
     expect_identical(state$project$blocks[[4]]$text, "Typed by the user")
     expect_false(identical(state$project, saved))
   })
+})
+
+test_that("a flextable is the builder's table: its header (merged cells spanning), its rows with their numbers, its note", {
+  df <- data.frame(Region = c("North", "Coast"), Coverage = c(81.25, 90))
+  ft <- flextable::flextable(df)
+  ft <- flextable::colformat_double(ft, j = "Coverage", digits = 1)
+  ft <- flextable::add_header_row(ft, values = "Coverage in 2024", colwidths = 2)
+  ft <- flextable::add_footer_lines(ft, "Source: example")
+  t <- cd_flextable_render(ft)
+  expect_identical(t$kind, "table")
+  expect_length(t$header, 2)
+  expect_identical(t$header[[1]][[1]]$text, "Coverage in 2024")
+  expect_identical(t$header[[1]][[1]]$span, 2L)
+  expect_identical(t$rows[[1]][[2]]$text, "81.2")
+  expect_identical(t$rows[[1]][[2]]$value, 81.25)
+  expect_identical(t$footer, "Source: example")
 })
