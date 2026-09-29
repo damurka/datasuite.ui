@@ -6,7 +6,16 @@
 .rb_quire_host <- function(context, i18n = NULL) {
   regions <- .rb_regions(context)
   quire::quire_host(
-    kinds = function() list(),
+    # the kinds with their indicators' names, for {chart_indicator} and {chart_indicators}
+    kinds = function() {
+      kinds <- .ds_report_kinds()
+      unname(lapply(names(kinds), function(k) {
+        ind <- kinds[[k]]$indicators
+        list(kind = k, type = kinds[[k]]$type, label = k,
+             indicators = if (is.character(ind) && length(ind) > 1) lapply(ind, function(v) list(value = v, label = .ds_indicator_name(i18n, v))))
+      }))
+    },
+    years = function() tryCatch(sort(as.numeric(as_report_context(context)$years())), error = function(e) numeric()),
     render = function(request) .rb_render_request(context, request, i18n, regions),
     fields = function(project, lang) report_fields(context, project, lang = lang %||% "en"),
     flag = function() cd_report_flag(context),
@@ -20,7 +29,27 @@
 # One report written by Quire: `format` "docx", "pptx" or "html" (the printable page)
 .rb_quire_write <- function(context, project, file, format, i18n) {
   lang <- project$lang %||% (if (is.list(i18n) || is.environment(i18n)) i18n$lang) %||% "en"
+  project$design$slide_designs <- .rb_quire_designs(project$design$slide_designs)
   quire::quire_export(project, .rb_quire_host(context, i18n), file, format = format, lang = lang)
+}
+
+# Slide designs as Quire reads them: a picture read from a PowerPoint file (report_theme_from_file(): its `file` on
+# disk; the app keeps it as "asset:<id>" instead) given as a data URL
+.rb_quire_designs <- function(designs) {
+  if (!is.list(designs)) return(designs)
+  lapply(designs, function(d) {
+    if (!is.list(d) || !is.list(d$decor)) return(d)
+    d$decor <- lapply(d$decor, function(item) {
+      f <- item$file
+      if (identical(item$type, "image") && is.null(item$src) && is.character(f) && length(f) == 1 && file.exists(f)) {
+        type <- switch(tolower(tools::file_ext(f)), png = "image/png", gif = "image/gif", svg = "image/svg+xml", "image/jpeg")
+        item$src <- paste0("data:", type, ";base64,", jsonlite::base64_enc(readBin(f, "raw", file.info(f)$size)))
+        item$file <- NULL
+      }
+      item
+    })
+    d
+  })
 }
 
 # One chart or table as Quire's render answer (request: the block, the report's design and language, its region):
