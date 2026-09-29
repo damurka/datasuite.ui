@@ -364,7 +364,7 @@ reports_server <- function(id, cache, i18n, active = reactive(TRUE)) {
   } else if (identical(scope, "write")) {
     fill(text("lbl_rb_aiPromptWrite", "In the report \"{name}\" (id {id}), write the paragraph {block}: "), values)
   } else {
-    fill(text("lbl_rb_aiPromptNarrative", "Fill in the narrative of the report \"{name}\" (id {id}): write a short introduction, a paragraph after each chart and table, and a conclusion, from the data in the report."), values)
+    fill(text("lbl_rb_aiPromptNarrative", "Fill in the narrative of the report \"{name}\" (id {id}), section by section: a short introduction, a paragraph after each chart and table, and a conclusion, from the data in the report. Write and save one section (a heading and what follows it) before going on to the next."), values)
   }
   gsub("[ \t\n]+", " ", prompt)
 }

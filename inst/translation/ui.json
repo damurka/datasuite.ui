@@ -5702,9 +5702,9 @@
     },
     {
       "key": "lbl_rb_aiPromptNarrative",
-      "en": "Fill in the narrative of the report \"{name}\" (id {id}): write a short introduction, a paragraph after each chart and table, and a conclusion, from the data in the report.",
-      "fr": "Rédige le texte du rapport « {name} » (id {id}) : une courte introduction, un paragraphe après chaque graphique et tableau, et une conclusion, à partir des données du rapport.",
-      "pt": "Escreva o texto do relatório \"{name}\" (id {id}): uma breve introdução, um parágrafo após cada gráfico e tabela, e uma conclusão, a partir dos dados do relatório."
+      "en": "Fill in the narrative of the report \"{name}\" (id {id}), section by section: a short introduction, a paragraph after each chart and table, and a conclusion, from the data in the report. Write and save one section (a heading and what follows it) before going on to the next.",
+      "fr": "Rédige le texte du rapport « {name} » (id {id}), section par section : une courte introduction, un paragraphe après chaque graphique et tableau, et une conclusion, à partir des données du rapport. Rédige et enregistre une section (un titre et ce qui le suit) avant de passer à la suivante.",
+      "pt": "Escreva o texto do relatório \"{name}\" (id {id}), secção a secção: uma breve introdução, um parágrafo após cada gráfico e tabela, e uma conclusão, a partir dos dados do relatório. Escreva e guarde uma secção (um título e o que se lhe segue) antes de passar à seguinte."
     },
     {
       "key": "lbl_rb_aiPromptWrite",

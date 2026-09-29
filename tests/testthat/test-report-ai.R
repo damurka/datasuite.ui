@@ -217,7 +217,7 @@ test_that("blocks are moved and removed; a deck's items are only changed", {
 test_that("the AI buttons' prompts name the report and the block", {
   p <- ai_project()
   expect_identical(.rb_ai_ask_prompt(list(scope = "narrative"), p, NULL, "en"),
-                   "Fill in the narrative of the report \"Benin National Coverage\" (id r1): write a short introduction, a paragraph after each chart and table, and a conclusion, from the data in the report.")
+                   "Fill in the narrative of the report \"Benin National Coverage\" (id r1), section by section: a short introduction, a paragraph after each chart and table, and a conclusion, from the data in the report. Write and save one section (a heading and what follows it) before going on to the next.")
   expect_identical(.rb_ai_ask_prompt(list(scope = "write", block = "p2", after = "c1"), p, NULL, "en"),
                    "In the report \"Benin National Coverage\" (id r1), write the paragraph p2 after the chart \"coverage\" (anc4), from its data.")
   expect_identical(.rb_ai_ask_prompt(list(scope = "write", block = "p1"), p, NULL, "en"),
