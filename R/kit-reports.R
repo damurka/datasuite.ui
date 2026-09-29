@@ -175,14 +175,6 @@ reports_server <- function(id, cache, i18n, active = reactive(TRUE)) {
       if (!is.character(url) || !startsWith(url, "data:")) return(NULL)
       list(type = sub("^data:([^;,]+).*$", "\\1", url), data = sub("^data:[^,]*,", "", url))
     }
-    chart_keys <- c(
-      search = "lbl_cc_search", noResults = "lbl_cc_no_results", reset = "lbl_chart_reset", resetGroup = "lbl_cc_reset_group",
-      changed = "lbl_cc_changed", asDrawn = "lbl_chart_style_as_drawn", yes = "lbl_chart_style_yes", no = "lbl_chart_style_no",
-      min = "lbl_chart_style_min", max = "lbl_chart_style_max", entriesLegend = "lbl_chart_style_legend_entries",
-      entriesCategories = "lbl_chart_style_category_entries", entryText = "lbl_chart_style_entry_text",
-      entryColor = "lbl_chart_style_entry_color", show = "lbl_cc_show", hidden = "lbl_cc_hidden"
-    )
-
     host <- quire::quire_host(
       kinds = function() cd_report_kinds(i18n, isolate(cache())),
       render = function(request) cd_report_render(isolate(cache()), request, i18n),
@@ -212,11 +204,8 @@ reports_server <- function(id, cache, i18n, active = reactive(TRUE)) {
       years = function() isolate(cache())$data_years,
       regions = function() cd_report_regions(isolate(cache())),
       flag = function() cd_report_flag(isolate(cache())),
-      chartSchema = function() {
-        if (is.null(.chart_schema_cache$schema)) .chart_schema_cache$schema <- cd_chart_schema(i18n)
-        list(tabs = .chart_schema_cache$schema$tabs, fields = .chart_schema_cache$schema$fields,
-             texts = lapply(chart_keys, function(k) cd_text(i18n, k)))
-      },
+      # the chart panel: Quire's own (its contract's chart options), which the builder also has
+      chartSchema = function() quire::quire_chart_options()[c("tabs", "fields", "texts")],
       listReports = function() {
         rows <- cd_report_summary(projects())
         lapply(rows, function(r) { r$order <- NULL; r })
@@ -254,6 +243,7 @@ reports_server <- function(id, cache, i18n, active = reactive(TRUE)) {
         th$palette <- as.list(th$palette)
         th
       },
+      # (a PDF of the printable page, and its pages for Print Preview: Quire's own, printed with Chrome or Edge)
       # a Word, PowerPoint or PDF file the builder wrote: kept here and downloaded through the page's (hidden) link, which
       # reaches the reader in DataSuite's window as in a browser
       saveFile = function(file) {

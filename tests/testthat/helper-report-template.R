@@ -1,6 +1,13 @@
 # Small Office files with a theme of their own, for test-report-template.R (and the manual checks): officer's blank
 # files with their theme's colours and fonts changed, rezipped.
 
+# Relative luminance (0 black, 1 white), to compare the theme's colours
+.rb_luminance <- function(hex) {
+  v <- as.numeric(grDevices::col2rgb(hex)) / 255
+  v <- ifelse(v <= 0.03928, v / 12.92, ((v + 0.055) / 1.055)^2.4)
+  sum(c(0.2126, 0.7152, 0.0722) * v)
+}
+
 .rb_test_rezip <- function(dir, file) {
   files <- list.files(dir, recursive = TRUE, all.files = TRUE, no.. = TRUE)
   files <- c(files[files == "[Content_Types].xml"], files[files != "[Content_Types].xml"])

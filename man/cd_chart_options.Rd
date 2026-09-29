@@ -84,6 +84,10 @@ cd_chart_options(
   panel_color = NULL,
   background_color = NULL,
   strip_background = NULL,
+  legend_border = NULL,
+  legend_border_color = NULL,
+  strip_border = NULL,
+  strip_border_color = NULL,
   theme_preset = NULL,
   colors = NULL,
   line_scale = NULL,
@@ -200,6 +204,11 @@ currently shown for them), values the text to show instead.}
 \item{background_color}{Fill colour of the whole chart.}
 
 \item{strip_background}{Fill colour of facet strips.}
+
+\item{legend_border, strip_border}{\code{TRUE}/\code{FALSE} to draw or hide a border around the legend or around each facet
+strip (panel heading).}
+
+\item{legend_border_color, strip_border_color}{Colour of that border.}
 
 \item{theme_preset}{Start from a different look before the other options are applied: \code{"grey"}, \code{"minimal"},
 \code{"classic"}, \code{"bw"}, \code{"light"}, \code{"linedraw"}, \code{"dark"}, \code{"void"}. It replaces the plot's own theme.}

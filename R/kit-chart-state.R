@@ -6,7 +6,7 @@
 # NULL, the entry maps (legend_labels, colors, category_labels) as named lists, flip as TRUE / FALSE.
 cd_panel_to_options <- function(x) {
   if (is.null(x) || !length(x)) return(NULL)
-  fields <- lapply(x[intersect(names(x), CHART_PANEL_FIELDS)], function(v) {
+  fields <- lapply(x[intersect(names(x), .chart_panel_fields())], function(v) {
     if (is.list(v) && !is.null(names(v))) return(unlist(v))
     if (is.list(v)) return(vapply(v, function(z) if (is.null(z)) NA_real_ else as.numeric(z), numeric(1)))
     v
@@ -17,7 +17,7 @@ cd_panel_to_options <- function(x) {
 # ... and back: stored options -> what the panel shows
 cd_options_to_panel <- function(options) {
   if (is.null(options) || !length(options)) return(NULL)
-  keep <- unclass(options)[intersect(names(options), CHART_PANEL_FIELDS)]
+  keep <- unclass(options)[intersect(names(options), .chart_panel_fields())]
   if (!length(keep)) return(NULL)
   lapply(keep, function(v) {
     if (!is.null(names(v))) {

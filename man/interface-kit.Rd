@@ -133,10 +133,6 @@
 \alias{cd_use_i18n}
 \alias{cd_use_pages}
 \alias{cd_wizard_steps}
-\alias{CHART_FIELDS}
-\alias{CHART_FONTS}
-\alias{CHART_PANEL_FIELDS}
-\alias{CHART_TABS}
 \alias{MANY_CATEGORIES}
 \alias{print.cd_chart_options}
 \alias{reports_server}

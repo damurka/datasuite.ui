@@ -66,6 +66,9 @@
 #' @param panel_color Fill colour of the plotting area.
 #' @param background_color Fill colour of the whole chart.
 #' @param strip_background Fill colour of facet strips.
+#' @param legend_border,strip_border `TRUE`/`FALSE` to draw or hide a border around the legend or around each facet
+#'   strip (panel heading).
+#' @param legend_border_color,strip_border_color Colour of that border.
 #' @param theme_preset Start from a different look before the other options are applied: `"grey"`, `"minimal"`,
 #'   `"classic"`, `"bw"`, `"light"`, `"linedraw"`, `"dark"`, `"void"`. It replaces the plot's own theme.
 #'
@@ -137,6 +140,7 @@ cd_chart_options <- function(..., title = NULL, subtitle = NULL, caption = NULL,
                              grid = NULL, grid_minor = NULL, grid_color = NULL, grid_linewidth = NULL,
                              grid_linetype = NULL, panel_border = NULL, panel_border_color = NULL,
                              panel_color = NULL, background_color = NULL, strip_background = NULL,
+                             legend_border = NULL, legend_border_color = NULL, strip_border = NULL, strip_border_color = NULL,
                              theme_preset = NULL,
                              colors = NULL, line_scale = NULL, point_scale = NULL, alpha = NULL, bar_width = NULL,
                              label_size = NULL, label_angle = NULL, label_color = NULL,
@@ -169,11 +173,11 @@ cd_chart_options <- function(..., title = NULL, subtitle = NULL, caption = NULL,
 }
 
 .validate_chart_options <- function(opts) {
-  bad <- setdiff(names(opts), .chart_option_fields)
+  bad <- setdiff(names(opts), .chart_option_fields())
   if (length(bad)) .ds_abort(c("x" = "Unknown chart option: {.field {bad}}."))
 
   for (name in names(opts)) {
-    spec <- .chart_option_spec[[name]]
+    spec <- .chart_option_spec()[[name]]
     value <- opts[[name]]
     ok <- switch(
       spec$type,
@@ -289,7 +293,7 @@ merge_chart_options <- function(...) {
 #' @export
 resolve_chart_options <- function(options = NULL, ...) {
   dots <- list(...)
-  known <- c(.chart_option_fields, names(.chart_option_aliases))
+  known <- c(.chart_option_fields(), names(.chart_option_aliases))
   dots <- dots[names(dots) %in% known]
   merge_chart_options(options, if (length(dots)) do.call(cd_chart_options, dots))
 }

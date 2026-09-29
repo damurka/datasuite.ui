@@ -18,8 +18,9 @@ A design (see \code{\link[=report_default_design]{report_default_design()}}) wit
 \code{list(title, content)}, the look of the file's title slide and of its other slides (either \code{NULL} when not found).
 A slide design is \code{list(background, decor, title, subtitle, body)}: \code{background} a colour or \code{NULL}; \code{decor} what
 is drawn behind a slide's content, back first, each \code{list(type = "image", file, x, y, w, h)} (a logo: \code{file} is
-the picture, copied out of the file into a temporary folder) or \code{list(type = "rect", fill, fill_opacity, outline, x, y, w, h)} (a band or bar), each also with \code{from} (\code{"master"}, \code{"layout"} or \code{"slide"}: where it was found); \code{title}, \code{subtitle}, \code{body} the style of that text, \code{list(x, y, w, h, fill, fill_opacity, color, font_size, bold, align, font)}, or \code{NULL}. Boxes are in inches from the slide's top-left
-corner; colours are \code{"#rrggbb"}. \code{\link[=export_deck]{export_deck()}} draws a design's background and decor on its slides.
+the picture, copied out of the file into a temporary folder) or \code{list(type = "rect", fill, fill_opacity, outline, x, y, w, h)} (a band or bar), each also with \code{from} (\code{"master"}, \code{"layout"} or \code{"slide"}: where it was found);
+\code{title}, \code{subtitle}, \code{body} the style of that text, \code{list(x, y, w, h, fill, fill_opacity, color, font_size, bold, align, font)}, or \code{NULL}. Boxes are in inches from the slide's top-left corner; colours are \code{"#rrggbb"}.
+\code{\link[=export_deck]{export_deck()}} draws a design's background and decor on its slides.
 }
 \description{
 Reads the colours and fonts of an Office theme or template (PowerPoint \code{.pptx} / \code{.potx}, Word \code{.docx} / \code{.dotx})
@@ -27,7 +28,7 @@ into a report theme, as \code{\link[=report_themes]{report_themes()}} gives them
 its first dark colour, the chart palette its six accent colours, the heading and body fonts its heading and body
 fonts. A Word file's styles give the heading colour (Heading 1's), the fonts and the text sizes when they set them,
 and its page size, orientation and margins. A PowerPoint file's master gives the title colour and fonts, the slide
-size and the background colour.
+size and the background colour. The reading is Quire's (\code{\link[quire:quire_theme_from_file]{quire::quire_theme_from_file()}}).
 }
 \details{
 The same file can be given to the export as the design's \code{template} (its path): see \code{\link[=export_deck]{export_deck()}} and

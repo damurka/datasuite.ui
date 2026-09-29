@@ -95,42 +95,10 @@ report_deck_layouts <- function(lang = NULL) {
 
 #' The program that turns a slide deck into a PDF
 #'
-#' Microsoft PowerPoint (Windows) or LibreOffice.
+#' Microsoft PowerPoint (Windows) or LibreOffice. (Quire's: [quire::quire_converter()].)
 #' @return `"powerpoint"`, `"libreoffice"`, or `NULL` when neither is installed.
 #' @export
-report_deck_converter <- function() {
-  if (.Platform$OS.type == "windows") {
-    found <- tryCatch(length(utils::readRegistry("PowerPoint.Application\\CurVer", "HCR")) > 0, error = function(e) FALSE)
-    if (isTRUE(found)) return("powerpoint")
-  }
-  if (nzchar(.rb_soffice())) return("libreoffice")
-  NULL
-}
-
-# PowerPoint opens the file (read-only, without a window) and saves it as PDF. PowerPoint runs once per computer: it
-# is closed afterwards only when no other presentation is open in it.
-.rb_powerpoint_pdf <- function(pptx, pdf) {
-  script <- tempfile(fileext = ".ps1")
-  on.exit(unlink(script), add = TRUE)
-  writeLines(c(
-    "param([string]$In, [string]$Out)",
-    "$ErrorActionPreference = 'Stop'",
-    "$pp = New-Object -ComObject PowerPoint.Application",
-    "try {",
-    "  $pres = $pp.Presentations.Open($In, -1, 0, 0)",
-    "  $pres.SaveAs($Out, 32)",
-    "  $pres.Close()",
-    "} finally { if ($pp.Presentations.Count -eq 0) { $pp.Quit() } }"
-  ), script)
-  args <- c("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", shQuote(normalizePath(script, winslash = "\\")),
-            "-In", shQuote(normalizePath(pptx, winslash = "\\")), "-Out", shQuote(normalizePath(pdf, winslash = "\\", mustWork = FALSE)))
-  out <- suppressWarnings(system2("powershell", args, stdout = TRUE, stderr = TRUE, timeout = 300))
-  status <- attr(out, "status") %||% 0
-  if (!identical(as.integer(status), 0L) || !file.exists(pdf)) {
-    .ds_abort(c("x" = "Microsoft PowerPoint could not make the PDF.", "i" = paste(utils::tail(out, 3), collapse = " ")))
-  }
-  invisible(TRUE)
-}
+report_deck_converter <- function() quire::quire_converter("deck")
 
 # ---- export --------------------------------------------------------------------------------------------------------
 
@@ -171,7 +139,7 @@ export_deck <- function(context, project, file, format = c("pptx", "pdf"), i18n 
     step(1)
     return(invisible(structure(file, converter = NULL)))
   }
-  if (converter == "powerpoint") .rb_powerpoint_pdf(pptx, file) else .rb_libreoffice_pdf(pptx, file)
+  quire::quire_to_pdf(pptx, file, converter)
   step(1)
   invisible(structure(file, converter = converter))
 }

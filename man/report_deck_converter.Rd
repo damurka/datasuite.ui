@@ -10,5 +10,5 @@ report_deck_converter()
 \code{"powerpoint"}, \code{"libreoffice"}, or \code{NULL} when neither is installed.
 }
 \description{
-Microsoft PowerPoint (Windows) or LibreOffice.
+Microsoft PowerPoint (Windows) or LibreOffice. (Quire's: \code{\link[quire:quire_converter]{quire::quire_converter()}}.)
 }

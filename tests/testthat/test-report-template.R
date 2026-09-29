@@ -61,11 +61,3 @@ test_that("a file that is not a PowerPoint or Word file is refused", {
   expect_error(report_theme_from_file(f), "PowerPoint or Word")
   expect_error(report_theme_from_file(tempfile()), "PowerPoint or Word")
 })
-
-test_that("theme colours follow Office's colour changes", {
-  expect_identical(toupper(.rb_color_mods("#000000", lum_mod = 0.5, lum_off = 0.5)), "#808080")
-  expect_identical(toupper(.rb_color_mods("#FFFFFF", shade = 0.5)), "#808080")
-  expect_identical(toupper(.rb_mix("#000000", "#FFFFFF", 0.5)), "#808080")
-  expect_identical(.rb_part_path("ppt/slideMasters", "../theme/theme1.xml"), "ppt/theme/theme1.xml")
-})
-

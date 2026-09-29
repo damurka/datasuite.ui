@@ -1,5 +1,5 @@
 # The chart's customize tool: one panel for its text, axes, legend, grid, background, marks and layout
-# (js/src/components/ChartCustomize.tsx). What it edits is CHART_FIELDS (charts/chart-schema.R); its values are
+# (js/src/components/ChartCustomize.tsx). What it edits is quire::quire_chart_options() (kit-chart-schema.R); its values are
 # cd2030.core chart options (charts/chart-state.R). The tabs and fields are the same for every chart, so they are built once.
 .chart_schema_cache <- new.env(parent = emptyenv())
 

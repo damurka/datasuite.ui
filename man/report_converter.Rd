@@ -10,5 +10,6 @@ report_converter()
 \code{"word"}, \code{"libreoffice"}, or \code{NULL} when neither is installed.
 }
 \description{
-Microsoft Word (Windows) or LibreOffice. With one of them the PDF has exactly the Word file's pages.
+Microsoft Word (Windows) or LibreOffice. With one of them the PDF has exactly the Word file's pages. (Quire's:
+\code{\link[quire:quire_converter]{quire::quire_converter()}}.)
 }

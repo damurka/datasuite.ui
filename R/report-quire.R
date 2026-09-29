@@ -80,18 +80,3 @@
     quire::quire_error(r$message %||% "")
   }
 }
-
-# The printable page printed to a PDF by a browser (Chrome, Edge or Chromium): when there is no Word or LibreOffice
-.rb_browser_pdf <- function(html, file) {
-  if (!requireNamespace("chromote", quietly = TRUE)) {
-    .ds_abort(c("x" = "PDF export needs Microsoft Word, LibreOffice, or the {.pkg chromote} package with Chrome.", "i" = "Download as Word instead."))
-  }
-  .rb_find_browser()
-  b <- chromote::ChromoteSession$new()
-  on.exit(try(b$close(), silent = TRUE), add = TRUE)
-  loaded <- b$Page$loadEventFired(wait_ = FALSE)
-  b$Page$navigate(paste0("file:///", normalizePath(html, winslash = "/")), wait_ = FALSE)
-  b$wait_for(loaded)
-  pdf <- b$Page$printToPDF(printBackground = TRUE, preferCSSPageSize = TRUE)
-  writeBin(jsonlite::base64_dec(pdf$data), file)
-}

@@ -33,74 +33,11 @@ with_report_chart_options <- function(context, code, design = NULL) {
 
 #' The program that turns the Word file into a PDF
 #'
-#' Microsoft Word (Windows) or LibreOffice. With one of them the PDF has exactly the Word file's pages.
+#' Microsoft Word (Windows) or LibreOffice. With one of them the PDF has exactly the Word file's pages. (Quire's:
+#' [quire::quire_converter()].)
 #' @return `"word"`, `"libreoffice"`, or `NULL` when neither is installed.
 #' @export
-report_converter <- function() {
-  if (.Platform$OS.type == "windows") {
-    found <- tryCatch(length(utils::readRegistry("Word.Application\\CurVer", "HCR")) > 0, error = function(e) FALSE)
-    if (isTRUE(found)) return("word")
-  }
-  if (nzchar(.rb_soffice())) return("libreoffice")
-  NULL
-}
-
-.rb_soffice <- function() {
-  candidates <- c(
-    Sys.which(c("soffice", "libreoffice")),
-    file.path(Sys.getenv("PROGRAMFILES"), "LibreOffice/program/soffice.exe"),
-    file.path(Sys.getenv("PROGRAMFILES(X86)"), "LibreOffice/program/soffice.exe"),
-    "/Applications/LibreOffice.app/Contents/MacOS/soffice"
-  )
-  hit <- candidates[nzchar(candidates) & file.exists(candidates)]
-  if (length(hit)) hit[[1]] else ""
-}
-
-# Word opens the file, fills in the contents page and page numbers, embeds the fonts, saves it and (with `pdf`) exports
-# the PDF: the Word file and the PDF are then the same document.
-.rb_word_finish <- function(docx, pdf = NULL) {
-  script <- tempfile(fileext = ".ps1")
-  on.exit(unlink(script), add = TRUE)
-  writeLines(c(
-    "param([string]$In, [string]$Out)",
-    "$ErrorActionPreference = 'Stop'",
-    "$word = New-Object -ComObject Word.Application",
-    "$word.Visible = $false",
-    "$word.DisplayAlerts = 0",
-    "try {",
-    "  $doc = $word.Documents.Open($In, $false, $false, $false)",
-    "  foreach ($t in $doc.TablesOfContents) { $t.Update() }",
-    "  $doc.Fields.Update() | Out-Null",
-    "  $doc.EmbedTrueTypeFonts = $true",
-    "  $doc.SaveSubsetFonts = $true",
-    "  $doc.Save()",
-    "  if ($Out) { $doc.ExportAsFixedFormat($Out, 17) }",
-    "  $doc.Close($false)",
-    "} finally { $word.Quit() }"
-  ), script)
-  args <- c("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", shQuote(normalizePath(script, winslash = "\\")),
-            "-In", shQuote(normalizePath(docx, winslash = "\\")))
-  if (!is.null(pdf)) args <- c(args, "-Out", shQuote(normalizePath(pdf, winslash = "\\", mustWork = FALSE)))
-  out <- suppressWarnings(system2("powershell", args, stdout = TRUE, stderr = TRUE, timeout = 300))
-  status <- attr(out, "status") %||% 0
-  if (!identical(as.integer(status), 0L) || (!is.null(pdf) && !file.exists(pdf))) {
-    .ds_abort(c("x" = "Microsoft Word could not make the PDF.", "i" = paste(utils::tail(out, 3), collapse = " ")))
-  }
-  invisible(TRUE)
-}
-
-# LibreOffice turns a Word file or a PowerPoint file into a PDF
-.rb_libreoffice_pdf <- function(docx, pdf) {
-  outdir <- tempfile("lo_")
-  dir.create(outdir)
-  on.exit(unlink(outdir, recursive = TRUE), add = TRUE)
-  out <- suppressWarnings(system2(.rb_soffice(), c("--headless", "--convert-to", "pdf", "--outdir", shQuote(outdir), shQuote(docx)),
-                                  stdout = TRUE, stderr = TRUE, timeout = 300))
-  made <- file.path(outdir, sub("\\.[^.]*$", ".pdf", basename(docx)))
-  if (!file.exists(made)) .ds_abort(c("x" = "LibreOffice could not make the PDF.", "i" = paste(utils::tail(out, 3), collapse = " ")))
-  file.copy(made, pdf, overwrite = TRUE)
-  invisible(TRUE)
-}
+report_converter <- function() quire::quire_converter("document")
 
 # ---- export --------------------------------------------------------------------------------------------------------
 
@@ -151,7 +88,7 @@ export_report <- function(context, project, file, format = c("docx", "pdf", "ppt
     html <- file.path(dir, "report.html")
     .rb_quire_write(context, project, html, "html", i18n)
     step(0.8)
-    .rb_browser_pdf(html, file)
+    quire::quire_html_pdf(html, file)
     step(1)
     return(invisible(structure(file, converter = "browser")))
   }
@@ -161,11 +98,11 @@ export_report <- function(context, project, file, format = c("docx", "pdf", "ppt
   step(0.8)
   if (format == "docx") {
     # Word fills in the contents page and embeds the fonts; without it Word asks to update the contents when opened
-    finished <- if (converter == "word") tryCatch(.rb_word_finish(docx), error = function(e) NULL)
+    finished <- if (converter == "word") tryCatch(quire::quire_word_finish(docx), error = function(e) NULL)
     step(1)
     return(invisible(structure(file, converter = if (isTRUE(finished)) "word")))
   }
-  if (converter == "word") .rb_word_finish(docx, file) else .rb_libreoffice_pdf(docx, file)
+  quire::quire_to_pdf(docx, file, converter)
   step(1)
   invisible(structure(file, converter = converter))
 }
@@ -305,28 +242,3 @@ report_flag_file <- function(iso3) .rb_flag_file(iso3)
   }
   path
 }
-
-# ---- Word ----------------------------------------------------------------------------------------------------------
-
-# ---- PDF without Word or LibreOffice -------------------------------------------------------------------------------
-
-# chromote looks for Google Chrome; on a machine without it, use another Chromium browser (Edge is on every Windows machine)
-.rb_find_browser <- function() {
-  found <- tryCatch(nzchar(chromote::find_chrome() %||% ""), error = function(e) FALSE)
-  if (isTRUE(found)) return(invisible(TRUE))
-  candidates <- c(
-    file.path(Sys.getenv("PROGRAMFILES"), "Google/Chrome/Application/chrome.exe"),
-    file.path(Sys.getenv("PROGRAMFILES(X86)"), "Google/Chrome/Application/chrome.exe"),
-    file.path(Sys.getenv("LOCALAPPDATA"), "Google/Chrome/Application/chrome.exe"),
-    file.path(Sys.getenv("PROGRAMFILES(X86)"), "Microsoft/Edge/Application/msedge.exe"),
-    file.path(Sys.getenv("PROGRAMFILES"), "Microsoft/Edge/Application/msedge.exe"),
-    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-    "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
-    Sys.which(c("chromium", "chromium-browser", "google-chrome", "microsoft-edge"))
-  )
-  hit <- candidates[nzchar(candidates) & file.exists(candidates)]
-  if (!length(hit)) .ds_abort(c("x" = "PDF export needs Microsoft Word, LibreOffice, Google Chrome, Microsoft Edge or Chromium.", "i" = "Download as Word instead."))
-  Sys.setenv(CHROMOTE_CHROME = hit[[1]])
-  invisible(TRUE)
-}
-

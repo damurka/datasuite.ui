@@ -69,7 +69,8 @@
   if (!is.null(o$legend_direction)) raw$legend.direction <- o$legend_direction
   if (!is.null(o$legend_justification)) raw$legend.justification <- o$legend_justification
   if (!is.null(o$legend_key_size)) raw$legend.key.size <- ggplot2::unit(o$legend_key_size, "mm")
-  if (!is.null(o$legend_background)) raw$legend.background <- ggplot2::element_rect(fill = o$legend_background)
+  legend_box <- .box_element(o$legend_background, o$legend_border, o$legend_border_color)
+  if (!is.null(legend_box)) raw$legend.background <- legend_box
 
   # axes
   if (!is.null(o$axis_line)) {
@@ -94,7 +95,8 @@
   }
   if (!is.null(o$panel_color)) raw$panel.background <- ggplot2::element_rect(fill = o$panel_color)
   if (!is.null(o$background_color)) raw$plot.background <- ggplot2::element_rect(fill = o$background_color)
-  if (!is.null(o$strip_background)) raw$strip.background <- ggplot2::element_rect(fill = o$strip_background)
+  strip_box <- .box_element(o$strip_background, o$strip_border, o$strip_border_color)
+  if (!is.null(strip_box)) raw$strip.background <- strip_box
 
   elements <- lapply(text_props, function(props) do.call(ggplot2::element_text, props))
   args <- c(elements, raw)
@@ -107,6 +109,14 @@
     }
   }
   p
+}
+
+# A box (the legend's, a facet strip's): its fill, and its border drawn (TRUE, or a colour given), hidden (FALSE) or as the
+# theme has it (NULL). NULL when nothing is set; unset parts inherit from the theme.
+.box_element <- function(fill, border, border_color) {
+  if (is.null(fill) && is.null(border) && is.null(border_color)) return(NULL)
+  colour <- if (isFALSE(border)) NA else if (isTRUE(border) || !is.null(border_color)) border_color %||% "grey40" else NULL
+  ggplot2::element_rect(fill = fill, colour = colour)
 }
 
 # Angle plus the alignment that keeps rotated labels touching their axis

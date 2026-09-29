@@ -9,7 +9,7 @@ import { tr, useLang } from "../lang";
 import type { LocalText } from "../lang";
 
 // One panel for everything a user can change about one chart: text, axes, legend, grid and background, marks, layout.
-// The list of fields comes from R (cd_chart_schema(), apps/_shared/R/charts/chart-schema.R), so a new chart option needs
+// The list of fields comes from Quire's contract (chart-options.json, sent by cd_chart_schema()), so a new chart option needs
 // no change here. Values are cd2030.core chart options (cd_chart_options()); only what is set is reported to Shiny.
 //
 // The chart's options can be kept for the screen, for the generated report, or both ("Apply to"). Editing "Both" writes the
