@@ -409,11 +409,42 @@ cd_report_render <- function(cache, request, i18n) {
   .rb_render_request(cache, request, cd_report_translator(i18n, request$lang %||% "en"), cd_report_regions(cache))
 }
 
-# A flextable as the builder's table: its header rows (merged cells spanning), its body rows (each cell's text as
-# flextable formats it, and its number when the column holds numbers) and its footer as the note under it
+# A flextable as the builder's table: its header rows and body rows (merged cells spanning; each cell's text as
+# flextable formats it, its number when the column holds numbers, and the formatting the flextable gives it: fill,
+# text colour, bold, italic, alignment), its column widths and its footer as the note under it. What the flextable
+# leaves as the defaults (white, black, left) is left to the builder's Table Design style.
 cd_flextable_render <- function(ft) {
   chunks <- flextable::information_data_chunk(ft)
+  cells_info <- tryCatch(flextable::information_data_cell(ft), error = function(e) NULL)
+  paras <- tryCatch(flextable::information_data_paragraph(ft), error = function(e) NULL)
   keys <- ft$col_keys
+  hex <- function(x) {
+    if (!is.character(x) || length(x) != 1 || is.na(x) || !nzchar(x) || x %in% c("transparent", "none")) return(NULL)
+    v <- tryCatch(grDevices::col2rgb(x, alpha = TRUE)[, 1], error = function(e) NULL)
+    if (is.null(v) || v[4] == 0) return(NULL)
+    sprintf("#%02x%02x%02x", v[1], v[2], v[3])
+  }
+  style_of <- function(name, i, key) {
+    s <- list()
+    ch <- chunks[chunks$.part == name & chunks$.row_id == i & chunks$.col_id == key, , drop = FALSE]
+    if (nrow(ch)) {
+      if (isTRUE(ch$bold[1])) s$bold <- TRUE
+      if (isTRUE(ch$italic[1])) s$italic <- TRUE
+      colour <- hex(ch$color[1])
+      if (!is.null(colour) && !identical(colour, "#000000")) s$color <- colour
+    }
+    if (!is.null(cells_info)) {
+      ce <- cells_info[cells_info$.part == name & cells_info$.row_id == i & cells_info$.col_id == key, , drop = FALSE]
+      fill <- if (nrow(ce)) hex(ce$background.color[1])
+      if (!is.null(fill) && !identical(fill, "#ffffff")) s$fill <- fill
+    }
+    if (!is.null(paras)) {
+      pa <- paras[paras$.part == name & paras$.row_id == i & paras$.col_id == key, , drop = FALSE]
+      align <- if (nrow(pa)) pa$text.align[1]
+      if (is.character(align) && align %in% c("center", "right")) s$align <- align
+    }
+    if (length(s)) s
+  }
   part <- function(name) {
     d <- chunks[chunks$.part == name, , drop = FALSE]
     if (!nrow(d)) return(list())
@@ -428,6 +459,8 @@ cd_flextable_render <- function(ft) {
         if (span > 1) cell$span <- as.integer(span)
         v <- if (identical(name, "body") && !is.null(data[[keys[j]]])) data[[keys[j]]][i]
         if (is.numeric(v) && length(v) == 1 && !is.na(v)) cell$value <- v
+        st <- style_of(name, i, keys[j])
+        if (!is.null(st)) cell$style <- st
         cells[[length(cells) + 1]] <- cell
       }
       cells
@@ -436,6 +469,9 @@ cd_flextable_render <- function(ft) {
   footer <- part("footer")
   note <- if (length(footer)) paste(unique(unlist(lapply(footer, function(r) vapply(r, function(c) c$text, character(1))))), collapse = " ")
   out <- list(kind = "table", header = part("header"), rows = part("body"))
+  # the column widths the flextable was given (as fractions of the table), when it has them
+  w <- tryCatch(as.numeric(ft$body$colwidths), error = function(e) numeric())
+  if (length(w) == length(keys) && all(is.finite(w) & w > 0)) out$widths <- I(w / sum(w))
   if (is.character(note) && nzchar(note)) out$footer <- note
   out
 }
