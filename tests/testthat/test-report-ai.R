@@ -224,6 +224,8 @@ test_that("the AI buttons' prompts name the report and the block", {
                    "In the report \"Benin National Coverage\" (id r1), write the paragraph p1: ")
   expect_identical(.rb_ai_ask_prompt(list(scope = "change", block = "p1"), p, NULL, "en"),
                    "Change the block \"Old text & more\" (p1) in the report \"Benin National Coverage\" (id r1): ")
+  expect_identical(.rb_ai_ask_prompt(list(scope = "section", block = "h1"), p, NULL, "en"),
+                   "In the report \"Benin National Coverage\" (id r1), write the section \"Introduction\" (heading h1) only: a short paragraph after its heading and a paragraph after each of its charts and tables, from their data. Leave the rest of the report as it is.")
 })
 
 # ---- the Reports page follows a change the AI made ------------------------------------------------------------------

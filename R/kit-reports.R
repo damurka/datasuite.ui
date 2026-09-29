@@ -22,8 +22,9 @@ reports_ui <- function(id, i18n) {
     id, i18n,
     # the report builder is Quire's (the quire package): this module is its host (reports_server())
     quire::quire_ui(ns("studio"), aiEnabled = .cd_in_datasuite()),
-    # the dataset's reference documents: context the AI reads for reports (kit-documents.R)
-    documents_card_ui(ns("documents"), i18n),
+    # the dataset's reference documents: context the AI reads for reports (kit-documents.R); set apart from the
+    # builder's list of reports above it (flush against it, the list's last row looked cut off)
+    div(style = "margin-top: 28px", documents_card_ui(ns("documents"), i18n)),
     # a file the builder writes is served through this (hidden) link's handler
     div(style = "display: none", downloadLink(ns("file"), ""))
   )
@@ -357,6 +358,9 @@ reports_server <- function(id, cache, i18n, active = reactive(TRUE)) {
   scope <- a$scope %||% "narrative"
   prompt <- if (identical(scope, "change")) {
     fill(text("lbl_rb_aiPromptChange", "Change the block {label} ({block}) in the report \"{name}\" (id {id}): "),
+         c(values, label = label(find(a$block))))
+  } else if (identical(scope, "section") && !is.null(find(a$block))) {
+    fill(text("lbl_rb_aiPromptSection", "In the report \"{name}\" (id {id}), write the section {label} (heading {block}) only: a short paragraph after its heading and a paragraph after each of its charts and tables, from their data. Leave the rest of the report as it is."),
          c(values, label = label(find(a$block))))
   } else if (identical(scope, "write") && !is.null(find(a$after))) {
     fill(text("lbl_rb_aiPromptWriteAfter", "In the report \"{name}\" (id {id}), write the paragraph {block} after the chart {after}, from its data."),

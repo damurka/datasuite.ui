@@ -5707,6 +5707,12 @@
       "pt": "Escreva o texto do relatório \"{name}\" (id {id}), secção a secção: uma breve introdução, um parágrafo após cada gráfico e tabela, e uma conclusão, a partir dos dados do relatório. Escreva e guarde uma secção (um título e o que se lhe segue) antes de passar à seguinte."
     },
     {
+      "key": "lbl_rb_aiPromptSection",
+      "en": "In the report \"{name}\" (id {id}), write the section {label} (heading {block}) only: a short paragraph after its heading and a paragraph after each of its charts and tables, from their data. Leave the rest of the report as it is.",
+      "fr": "Dans le rapport « {name} » (id {id}), rédige seulement la section {label} (titre {block}) : un court paragraphe après son titre et un paragraphe après chacun de ses graphiques et tableaux, à partir de leurs données. Laisse le reste du rapport tel quel.",
+      "pt": "No relatório \"{name}\" (id {id}), escreva apenas a secção {label} (título {block}): um breve parágrafo após o seu título e um parágrafo após cada um dos seus gráficos e tabelas, a partir dos seus dados. Deixe o resto do relatório como está."
+    },
+    {
       "key": "lbl_rb_aiPromptWrite",
       "en": "In the report \"{name}\" (id {id}), write the paragraph {block}: ",
       "fr": "Dans le rapport « {name} » (id {id}), rédige le paragraphe {block} : ",
