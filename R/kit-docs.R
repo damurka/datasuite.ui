@@ -25,7 +25,7 @@
 #' @aliases cd_report_regions cd_report_render cd_report_summary cd_flextable_render
 #' @aliases cd_report_translator cd_request_report cd_reset_file_upload cd_screen cd_screens
 #' @aliases cd_set_file_upload cd_set_language cd_sheet_writer cd_shell_server cd_show_dialog cd_sidebar
-#' @aliases cd_spinner cd_startup_loader cd_status_banner cd_tab_panes cd_tab_strip cd_table_card
+#' @aliases cd_spinner cd_table_spinner cd_startup_loader cd_status_banner cd_tab_panes cd_tab_strip cd_table_card
 #' @aliases cd_table_toolbar cd_tag_assert cd_text cd_text_area cd_tooltip cd_translations
 #' @aliases cd_update_input cd_update_tab_panes cd_upload_zone_texts cd_use_i18n cd_use_pages cd_wizard_steps
 #' @aliases MANY_CATEGORIES print.cd_chart_options

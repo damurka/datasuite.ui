@@ -21,6 +21,9 @@ export interface NavItem {
    *  passes the same resolved readiness down through its own existing recursion, so children inherit it
    *  without needing the flag set individually. */
   requiresAdjustment?: boolean;
+  /** Not drawn in the sidebar (a page opened from elsewhere, as the Reports page from the header's button); the
+   *  breadcrumb still finds it. cd_nav_item(hidden = TRUE). */
+  hidden?: boolean;
 }
 
 export interface NavSection {

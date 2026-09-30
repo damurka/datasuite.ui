@@ -7,6 +7,546 @@
   ],
   "translation": [
     {
+      "key": "btn_adj_adjust",
+      "en": "Adjust data",
+      "fr": "Ajuster les données",
+      "pt": "Ajustar os dados"
+    },
+    {
+      "key": "btn_adj_adjust_again",
+      "en": "Adjust data again",
+      "fr": "Ajuster les données à nouveau",
+      "pt": "Ajustar os dados novamente"
+    },
+    {
+      "key": "btn_adj_area_settings",
+      "en": "Settings for a region or district",
+      "fr": "Paramètres d'une région ou d'un district",
+      "pt": "Definições para uma região ou distrito"
+    },
+    {
+      "key": "btn_adj_cancel",
+      "en": "Cancel changes",
+      "fr": "Annuler les modifications",
+      "pt": "Cancelar as alterações"
+    },
+    {
+      "key": "btn_adj_cancel_dlg",
+      "en": "Cancel",
+      "fr": "Annuler",
+      "pt": "Cancelar"
+    },
+    {
+      "key": "btn_adj_close",
+      "en": "Close {group}",
+      "fr": "Fermer {group}",
+      "pt": "Fechar {group}"
+    },
+    {
+      "key": "btn_adj_close_dlg",
+      "en": "Close",
+      "fr": "Fermer",
+      "pt": "Fechar"
+    },
+    {
+      "key": "btn_adj_confirm_remove",
+      "en": "Remove its data",
+      "fr": "Retirer ses données",
+      "pt": "Retirar os seus dados"
+    },
+    {
+      "key": "btn_adj_confirm_scope",
+      "en": "Give it its own settings",
+      "fr": "Lui donner ses propres paramètres",
+      "pt": "Dar-lhe definições próprias"
+    },
+    {
+      "key": "btn_adj_default",
+      "en": "Back to the Countdown default",
+      "fr": "Revenir aux valeurs par défaut de Countdown",
+      "pt": "Voltar ao padrão Countdown"
+    },
+    {
+      "key": "btn_adj_edit",
+      "en": "Edit",
+      "fr": "Modifier",
+      "pt": "Editar"
+    },
+    {
+      "key": "btn_adj_keep_it",
+      "en": "Keep it",
+      "fr": "Le garder",
+      "pt": "Mantê-lo"
+    },
+    {
+      "key": "btn_adj_keep_reported",
+      "en": "Keep as reported",
+      "fr": "Garder tel que rapporté",
+      "pt": "Manter como reportado"
+    },
+    {
+      "key": "btn_adj_open",
+      "en": "Edit the indicators of {group}",
+      "fr": "Modifier les indicateurs de {group}",
+      "pt": "Editar os indicadores de {group}"
+    },
+    {
+      "key": "btn_adj_remove_area",
+      "en": "Remove data for an area",
+      "fr": "Retirer les données d'une zone",
+      "pt": "Retirar os dados de uma área"
+    },
+    {
+      "key": "btn_adj_reset",
+      "en": "Back to the inherited setting",
+      "fr": "Revenir au paramètre hérité",
+      "pt": "Voltar à definição herdada"
+    },
+    {
+      "key": "btn_adj_use_everywhere",
+      "en": "Use Everywhere's settings",
+      "fr": "Utiliser les paramètres de Partout",
+      "pt": "Usar as definições de Em todo o lado"
+    },
+    {
+      "key": "lbl_adj_all_group",
+      "en": "{n} indicators, all with the group's settings",
+      "fr": "{n} indicateurs, tous avec les paramètres du groupe",
+      "pt": "{n} indicadores, todos com as definições do grupo"
+    },
+    {
+      "key": "lbl_adj_all_inherited",
+      "en": "{n} indicators, all inherited",
+      "fr": "{n} indicateurs, tous hérités",
+      "pt": "{n} indicadores, todos herdados"
+    },
+    {
+      "key": "lbl_adj_also_removed",
+      "en": "Also removed, for an area",
+      "fr": "Également retiré, pour une zone",
+      "pt": "Também retirado, para uma área"
+    },
+    {
+      "key": "lbl_adj_as_reported",
+      "en": "as reported",
+      "fr": "tel que rapporté",
+      "pt": "como reportado"
+    },
+    {
+      "key": "lbl_adj_changed_for",
+      "en": "Changed for {area}",
+      "fr": "Modifié pour {area}",
+      "pt": "Alterado para {area}"
+    },
+    {
+      "key": "lbl_adj_changed_list",
+      "en": "{n} indicators · {m} changed for {area}: {list}",
+      "fr": "{n} indicateurs · {m} modifiés pour {area} : {list}",
+      "pt": "{n} indicadores · {m} alterados para {area}: {list}"
+    },
+    {
+      "key": "lbl_adj_col_indicator",
+      "en": "Indicator",
+      "fr": "Indicateur",
+      "pt": "Indicador"
+    },
+    {
+      "key": "lbl_adj_col_k",
+      "en": "Completeness (k)",
+      "fr": "Complétude (k)",
+      "pt": "Completude (k)"
+    },
+    {
+      "key": "lbl_adj_col_missing",
+      "en": "Missing values",
+      "fr": "Valeurs manquantes",
+      "pt": "Valores em falta"
+    },
+    {
+      "key": "lbl_adj_col_outliers",
+      "en": "Outliers",
+      "fr": "Valeurs aberrantes",
+      "pt": "Valores atípicos"
+    },
+    {
+      "key": "lbl_adj_district",
+      "en": "district",
+      "fr": "district",
+      "pt": "distrito"
+    },
+    {
+      "key": "lbl_adj_district_in",
+      "en": "district in {region}",
+      "fr": "district de {region}",
+      "pt": "distrito de {region}"
+    },
+    {
+      "key": "lbl_adj_every_year",
+      "en": "Every year",
+      "fr": "Toutes les années",
+      "pt": "Todos os anos"
+    },
+    {
+      "key": "lbl_adj_everywhere",
+      "en": "Everywhere",
+      "fr": "Partout",
+      "pt": "Em todo o lado"
+    },
+    {
+      "key": "lbl_adj_find",
+      "en": "Find a region or district",
+      "fr": "Chercher une région ou un district",
+      "pt": "Procurar uma região ou distrito"
+    },
+    {
+      "key": "lbl_adj_fn_area",
+      "en": "{area}: {summary}.",
+      "fr": "{area} : {summary}.",
+      "pt": "{area}: {summary}."
+    },
+    {
+      "key": "lbl_adj_fn_default",
+      "en": "The Countdown default everywhere.",
+      "fr": "Les valeurs par défaut de Countdown partout.",
+      "pt": "O padrão Countdown em todo o lado."
+    },
+    {
+      "key": "lbl_adj_fn_removal_all",
+      "en": "{area} removed for every year (services and population).",
+      "fr": "{area} retiré pour toutes les années (services et population).",
+      "pt": "{area} retirado para todos os anos (serviços e população)."
+    },
+    {
+      "key": "lbl_adj_fn_removal_years",
+      "en": "{area} removed for {years} (services and population).",
+      "fr": "{area} retiré pour {years} (services et population).",
+      "pt": "{area} retirado para {years} (serviços e população)."
+    },
+    {
+      "key": "lbl_adj_fn_years",
+      "en": "{years} removed everywhere.",
+      "fr": "{years} retiré partout.",
+      "pt": "{years} retirado em todo o lado."
+    },
+    {
+      "key": "lbl_adj_footnote",
+      "en": "As the footnote will read",
+      "fr": "Comme la note l'indiquera",
+      "pt": "Como a nota de rodapé dirá"
+    },
+    {
+      "key": "lbl_adj_group_here",
+      "en": "Group here ({k})",
+      "fr": "Groupe ici ({k})",
+      "pt": "Grupo aqui ({k})"
+    },
+    {
+      "key": "lbl_adj_group_k_opt",
+      "en": "Group ({k})",
+      "fr": "Groupe ({k})",
+      "pt": "Grupo ({k})"
+    },
+    {
+      "key": "lbl_adj_inherited",
+      "en": "Inherited ({k})",
+      "fr": "Hérité ({k})",
+      "pt": "Herdado ({k})"
+    },
+    {
+      "key": "lbl_adj_k",
+      "en": "k",
+      "fr": "k",
+      "pt": "k"
+    },
+    {
+      "key": "lbl_adj_k_group",
+      "en": "{group}: k-factor",
+      "fr": "{group} : facteur k",
+      "pt": "{group}: fator k"
+    },
+    {
+      "key": "lbl_adj_k_one",
+      "en": "{indicator}: k-factor",
+      "fr": "{indicator} : facteur k",
+      "pt": "{indicator}: fator k"
+    },
+    {
+      "key": "lbl_adj_kept_hint",
+      "en": "Removed data is left out of every analysis and report, its population too.",
+      "fr": "Les données retirées sont exclues de toutes les analyses et de tous les rapports, leur population aussi.",
+      "pt": "Os dados retirados ficam de fora de todas as análises e relatórios, e a sua população também."
+    },
+    {
+      "key": "lbl_adj_missing_all",
+      "en": "{group}: fill missing values for every indicator",
+      "fr": "{group} : combler les valeurs manquantes de tous les indicateurs",
+      "pt": "{group}: preencher valores em falta de todos os indicadores"
+    },
+    {
+      "key": "lbl_adj_missing_one",
+      "en": "{indicator}: fill missing values",
+      "fr": "{indicator} : combler les valeurs manquantes",
+      "pt": "{indicator}: preencher valores em falta"
+    },
+    {
+      "key": "lbl_adj_months",
+      "en": "{n} months",
+      "fr": "{n} mois",
+      "pt": "{n} meses"
+    },
+    {
+      "key": "lbl_adj_n_changed",
+      "en": "{n} changed",
+      "fr": "{n} modifiés",
+      "pt": "{n} alterados"
+    },
+    {
+      "key": "lbl_adj_no_match",
+      "en": "No region or district matches.",
+      "fr": "Aucune région ni aucun district ne correspond.",
+      "pt": "Nenhuma região ou distrito corresponde."
+    },
+    {
+      "key": "lbl_adj_none",
+      "en": "none",
+      "fr": "aucun",
+      "pt": "nenhum"
+    },
+    {
+      "key": "lbl_adj_outliers_all",
+      "en": "{group}: correct outliers for every indicator",
+      "fr": "{group} : corriger les valeurs aberrantes de tous les indicateurs",
+      "pt": "{group}: corrigir valores atípicos de todos os indicadores"
+    },
+    {
+      "key": "lbl_adj_outliers_one",
+      "en": "{indicator}: correct outliers",
+      "fr": "{indicator} : corriger les valeurs aberrantes",
+      "pt": "{indicator}: corrigir valores atípicos"
+    },
+    {
+      "key": "lbl_adj_outliers_only",
+      "en": "Outliers only",
+      "fr": "Valeurs aberrantes seulement",
+      "pt": "Só valores atípicos"
+    },
+    {
+      "key": "lbl_adj_own",
+      "en": "Own settings",
+      "fr": "Paramètres propres",
+      "pt": "Definições próprias"
+    },
+    {
+      "key": "lbl_adj_own_list",
+      "en": "{n} indicators · {m} with their own settings: {list}",
+      "fr": "{n} indicateurs · {m} avec leurs propres paramètres : {list}",
+      "pt": "{n} indicadores · {m} com definições próprias: {list}"
+    },
+    {
+      "key": "lbl_adj_region",
+      "en": "region",
+      "fr": "région",
+      "pt": "região"
+    },
+    {
+      "key": "lbl_adj_region_n",
+      "en": "region · {n} districts",
+      "fr": "région · {n} districts",
+      "pt": "região · {n} distritos"
+    },
+    {
+      "key": "lbl_adj_removed_line",
+      "en": "{area} ({kind}) · {when} · removed from the analysis",
+      "fr": "{area} ({kind}) · {when} · retiré de l'analyse",
+      "pt": "{area} ({kind}) · {when} · retirado da análise"
+    },
+    {
+      "key": "lbl_adj_reporting",
+      "en": "Reporting {rr} in {year} · {below} districts below {threshold}%",
+      "fr": "Rapportage {rr} en {year} · {below} districts sous {threshold} %",
+      "pt": "Reporte {rr} em {year} · {below} distritos abaixo de {threshold}%"
+    },
+    {
+      "key": "lbl_adj_settings_hint",
+      "en": "Everywhere is the default. A region or district can have its own settings: whatever it does not change is inherited, and a district's own settings win over its region's. Completeness: the k-factor (0 leaves the numbers as reported, 1 assumes the facilities that did not report did as much as the ones that did). Outliers: months more than 5 × MAD away replaced by the district's median for the year. Missing values: empty months filled with that median.",
+      "fr": "Partout est la valeur par défaut. Une région ou un district peut avoir ses propres paramètres : ce qu'il ne change pas est hérité, et ceux d'un district l'emportent sur ceux de sa région. Complétude : le facteur k (0 garde les chiffres tels que rapportés, 1 suppose que les établissements qui n'ont pas rapporté ont fait autant que les autres). Valeurs aberrantes : les mois à plus de 5 × MAD remplacés par la médiane du district pour l'année. Valeurs manquantes : les mois vides remplis avec cette médiane.",
+      "pt": "Em todo o lado é o padrão. Uma região ou distrito pode ter as suas próprias definições: o que não mudar é herdado, e as de um distrito prevalecem sobre as da sua região. Completude: o fator k (0 mantém os números como reportados, 1 assume que as unidades que não reportaram fizeram tanto como as que reportaram). Valores atípicos: meses a mais de 5 × MAD substituídos pela mediana do distrito para o ano. Valores em falta: meses vazios preenchidos com essa mediana."
+    },
+    {
+      "key": "lbl_adj_status_adjusted",
+      "en": "Adjusted",
+      "fr": "Ajusté",
+      "pt": "Ajustado"
+    },
+    {
+      "key": "lbl_adj_status_editing",
+      "en": "Editing",
+      "fr": "En modification",
+      "pt": "Em edição"
+    },
+    {
+      "key": "lbl_adj_status_not",
+      "en": "Not adjusted",
+      "fr": "Non ajusté",
+      "pt": "Não ajustado"
+    },
+    {
+      "key": "lbl_adj_sum_as_everywhere",
+      "en": "as Everywhere",
+      "fr": "comme Partout",
+      "pt": "como Em todo o lado"
+    },
+    {
+      "key": "lbl_adj_sum_group_k",
+      "en": "{group} k {k}",
+      "fr": "{group} k {k}",
+      "pt": "{group} k {k}"
+    },
+    {
+      "key": "lbl_adj_sum_no_missing",
+      "en": "no missing-value correction for {groups}",
+      "fr": "aucune correction des valeurs manquantes pour {groups}",
+      "pt": "sem correção de valores em falta para {groups}"
+    },
+    {
+      "key": "lbl_adj_sum_no_outliers",
+      "en": "no outlier correction for {groups}",
+      "fr": "aucune correction des valeurs aberrantes pour {groups}",
+      "pt": "sem correção de valores atípicos para {groups}"
+    },
+    {
+      "key": "lbl_adj_sum_own_k",
+      "en": "{n} indicators with their own k",
+      "fr": "{n} indicateurs avec leur propre k",
+      "pt": "{n} indicadores com k próprio"
+    },
+    {
+      "key": "lbl_adj_sum_removals",
+      "en": "Areas' data removed",
+      "fr": "Données de zones retirées",
+      "pt": "Dados de áreas retirados"
+    },
+    {
+      "key": "lbl_adj_sum_reported",
+      "en": "kept as reported: no completeness, outlier or missing-value correction",
+      "fr": "gardé tel que rapporté : aucune correction de complétude, de valeurs aberrantes ou manquantes",
+      "pt": "mantido como reportado: sem correção de completude, valores atípicos ou em falta"
+    },
+    {
+      "key": "lbl_adj_sum_rest",
+      "en": "the rest inherited",
+      "fr": "le reste hérité",
+      "pt": "o resto herdado"
+    },
+    {
+      "key": "lbl_adj_sum_scopes",
+      "en": "Areas with own settings",
+      "fr": "Zones avec leurs propres paramètres",
+      "pt": "Áreas com definições próprias"
+    },
+    {
+      "key": "lbl_adj_sum_years",
+      "en": "Years kept",
+      "fr": "Années conservées",
+      "pt": "Anos mantidos"
+    },
+    {
+      "key": "lbl_adj_sum_years_value",
+      "en": "{kept} of {all}",
+      "fr": "{kept} sur {all}",
+      "pt": "{kept} de {all}"
+    },
+    {
+      "key": "lbl_adj_type_district",
+      "en": "Type a name to find a district.",
+      "fr": "Tapez un nom pour trouver un district.",
+      "pt": "Escreva um nome para encontrar um distrito."
+    },
+    {
+      "key": "lbl_adj_when",
+      "en": "When",
+      "fr": "Quand",
+      "pt": "Quando"
+    },
+    {
+      "key": "lbl_adj_where",
+      "en": "Where: a region or a district",
+      "fr": "Où : une région ou un district",
+      "pt": "Onde: uma região ou um distrito"
+    },
+    {
+      "key": "lbl_adj_years_everywhere",
+      "en": "Years, everywhere",
+      "fr": "Années, partout",
+      "pt": "Anos, em todo o lado"
+    },
+    {
+      "key": "msg_adj_busy",
+      "en": "Adjusting…",
+      "fr": "Ajustement…",
+      "pt": "A ajustar…"
+    },
+    {
+      "key": "msg_adj_editing",
+      "en": "Editing.",
+      "fr": "Modification en cours.",
+      "pt": "Em edição."
+    },
+    {
+      "key": "msg_adj_editing_more",
+      "en": "The analysis pages keep the adjustment already made until you press Adjust data again.",
+      "fr": "Les pages d'analyse gardent l'ajustement déjà fait jusqu'à ce que vous appuyiez sur Ajuster les données à nouveau.",
+      "pt": "As páginas de análise mantêm o ajuste já feito até premir Ajustar os dados novamente."
+    },
+    {
+      "key": "msg_adj_locked",
+      "en": "The data is adjusted with these settings.",
+      "fr": "Les données sont ajustées avec ces paramètres.",
+      "pt": "Os dados estão ajustados com estas definições."
+    },
+    {
+      "key": "msg_adj_locked_more",
+      "en": "They are locked so nothing changes by mistake; the analysis pages use them.",
+      "fr": "Ils sont verrouillés pour que rien ne change par erreur ; les pages d'analyse les utilisent.",
+      "pt": "Estão bloqueadas para que nada mude por engano; as páginas de análise usam-nas."
+    },
+    {
+      "key": "msg_adj_remove_note",
+      "en": "Its services and its population both leave the totals for those years, so coverage stays right for the areas that remain. With a UN estimate as the national denominator (the whole country), national coverage would come out too low. Reports say which data was removed.",
+      "fr": "Ses services et sa population quittent tous deux les totaux de ces années, donc la couverture reste juste pour les zones restantes. Avec une estimation des Nations Unies comme dénominateur national (tout le pays), la couverture nationale serait trop basse. Les rapports indiquent quelles données ont été retirées.",
+      "pt": "Os seus serviços e a sua população saem ambos dos totais desses anos, pelo que a cobertura continua certa para as áreas que ficam. Com uma estimativa da ONU como denominador nacional (o país inteiro), a cobertura nacional ficaria demasiado baixa. Os relatórios dizem que dados foram retirados."
+    },
+    {
+      "key": "title_adj_dlg_remove",
+      "en": "Remove data for an area",
+      "fr": "Retirer les données d'une zone",
+      "pt": "Retirar os dados de uma área"
+    },
+    {
+      "key": "title_adj_dlg_scope",
+      "en": "Settings for a region or district",
+      "fr": "Paramètres d'une région ou d'un district",
+      "pt": "Definições para uma região ou distrito"
+    },
+    {
+      "key": "title_adj_kept",
+      "en": "1 · Data kept for analysis",
+      "fr": "1 · Données conservées pour l'analyse",
+      "pt": "1 · Dados mantidos para a análise"
+    },
+    {
+      "key": "title_adj_settings",
+      "en": "2 · Adjustment settings",
+      "fr": "2 · Paramètres de l'ajustement",
+      "pt": "2 · Definições do ajuste"
+    },
+    {
+      "key": "title_adj_summary",
+      "en": "Summary",
+      "fr": "Résumé",
+      "pt": "Resumo"
+    },
+    {
       "key": "btn_global_cancel",
       "en": "Cancel",
       "fr": "Annuler",

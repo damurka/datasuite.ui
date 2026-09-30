@@ -6,8 +6,11 @@
 # instead of the plain `data_ready` every other item still uses. Only ever set on a section's own TOP-level
 # items in app.R (Denominators' two leaf items, Analysis's six group items) -- there is no need to also mark
 # each descendant individually.
-cd_nav_item <- function(label, tabName = NULL, icon = NULL, i18n = cd_i18n(), children = NULL, requires_adjustment = FALSE) {
-  list(
+# `hidden = TRUE`: a page reached from elsewhere (the Reports page, from the header's button): not drawn in the sidebar,
+# but still known to the header's breadcrumb and to the AI.
+cd_nav_item <- function(label, tabName = NULL, icon = NULL, i18n = cd_i18n(), children = NULL, requires_adjustment = FALSE,
+                        hidden = FALSE) {
+  item <- list(
     key = tabName %||% paste(c(label, sample.int(1e6, 1)), collapse = "-"),
     tabName = tabName,
     label = cd_text(i18n, label),
@@ -15,6 +18,8 @@ cd_nav_item <- function(label, tabName = NULL, icon = NULL, i18n = cd_i18n(), ch
     children = children,
     requiresAdjustment = requires_adjustment
   )
+  if (isTRUE(hidden)) item$hidden <- TRUE
+  item
 }
 
 # A section: an uppercase label ("DATA QUALITY") over a run of nav items.

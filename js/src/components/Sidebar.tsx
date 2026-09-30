@@ -388,6 +388,8 @@ export default function Sidebar({ id, sections, initialTab, docsLabel, docsHref,
     setFlyout((prev) => (prev?.item.key === item.key ? null : positionFlyout(item, el)));
   };
 
+  // what the sidebar draws: the items not hidden, and the sections that still have one
+  const shown = sections.map((section) => ({ ...section, items: section.items.filter((item) => !item.hidden) })).filter((section) => section.items.length > 0);
   return (
     <div
       ref={rootRef}
@@ -396,7 +398,7 @@ export default function Sidebar({ id, sections, initialTab, docsLabel, docsHref,
     >
       {showRail ? (
         <nav aria-label="Main" className="cd-nav cd-nav--collapsed">
-          {sections.map((section, i) => (
+          {shown.map((section, i) => (
             <ul key={i} className="cd-nav__list cd-nav__list--collapsed">
               {section.items.map((item) => (
                 <RailItem
@@ -416,7 +418,7 @@ export default function Sidebar({ id, sections, initialTab, docsLabel, docsHref,
         </nav>
       ) : (
         <nav aria-label="Main" className="cd-nav">
-          {sections.map((section, i) => (
+          {shown.map((section, i) => (
             <React.Fragment key={i}>
               <div className="cd-nav__section">{tr(section.label, lang)}</div>
               <ul className="cd-nav__list">

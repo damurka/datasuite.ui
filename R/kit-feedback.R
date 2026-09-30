@@ -38,9 +38,12 @@ cd_tooltip <- function(text, label = NULL, status = NULL, i18n = cd_i18n()) {
 # The bar-skeleton "loading" placeholder (LoadingSkeleton.tsx) -- project/Patterns.dc.html's own "Empty and
 # loading" pattern card, second example. Not an InputAdapter component: purely presentational, cd_spinner()
 # (below) is what decides WHEN to show it.
-cd_loading_skeleton <- function(i18n = cd_i18n()) {
+# `variant`: "chart" (the bars) or "table" (a header and rows, for a table's output).
+cd_loading_skeleton <- function(i18n = cd_i18n(), variant = c("chart", "table")) {
+  variant <- match.arg(variant)
   cd_react_element("LoadingSkeleton", shiny.react::asProps(
-    label = cd_text(i18n, "lbl_loading_calculating")
+    label = cd_text(i18n, "lbl_loading_calculating"),
+    variant = variant
   ))
 }
 
@@ -60,13 +63,19 @@ cd_loading_skeleton <- function(i18n = cd_i18n()) {
 # clears it on the output's first recalculating/value/error. `min_height`: the height the
 # finished content will roughly occupy (a chart's 400px, say), applied to the skeleton and to the wrapper so
 # that swap doesn't change the card's size.
-cd_spinner <- function(ui, i18n = cd_i18n(), min_height = NULL) {
+cd_spinner <- function(ui, i18n = cd_i18n(), min_height = NULL, variant = c("chart", "table")) {
+  variant <- match.arg(variant)
   div(
     class = "cd-spinner-wrap cd-spinner-wrap--init",
     style = if (!is.null(min_height)) paste0("--cd-skel-h: ", htmltools::validateCssUnit(min_height), ";"),
     ui,
-    div(class = "cd-spinner-overlay", cd_loading_skeleton(i18n = i18n))
+    div(class = "cd-spinner-overlay", cd_loading_skeleton(i18n = i18n, variant = variant))
   )
+}
+
+# The loader of a table's output (a reactable, a flextable in a uiOutput()): cd_spinner() with the table skeleton.
+cd_table_spinner <- function(ui, i18n = cd_i18n(), min_height = NULL) {
+  cd_spinner(ui, i18n = i18n, min_height = min_height, variant = "table")
 }
 
 # project/Patterns.dc.html's own "Empty and loading" pattern card, first example -- an icon, a title, a muted

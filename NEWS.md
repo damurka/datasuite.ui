@@ -1,3 +1,28 @@
+# datasuite.ui 0.4.0
+
+* The Reports page's builder is Quire (the quire package). `reports_ui()` and `reports_server()` keep their names and
+  arguments; the module is Quire's host: the kinds, drawing (charts as pictures with their legend entries and panels,
+  flextables as cells, keeping merged cells, fills, bold, alignment and widths), fields, standard reports, themes
+  (from Office files too), years, regions, the flag, the chart options, and the reports and pictures kept in the
+  dataset. A page's Generate report opens the new report, the AI's changes reopen the open report, and the AI buttons
+  (the narrative, Write this section) open DataSuite's chat.
+* Reports written from R (`export_report()`, `export_deck()`, same arguments) are written by Quire's own Word and
+  PowerPoint writers, so a file written from R is the one the builder downloads. The PDF is made by Word, PowerPoint
+  or LibreOffice, else printed from Quire's printable page. The officer writers and the old ReportStudio builder are
+  gone (officer moves to Suggests; V8 and magick are imported).
+* Chart options, printing and Office themes come from quire: `cd_chart_options()` reads `quire::quire_chart_options()`,
+  the builder's own file; printing and converting are quire's; `report_theme_from_file()` reads with
+  `quire::quire_theme_from_file()`. Legend and panel-heading borders (`legend_border`, `strip_border` and their colours).
+* `cd_adjustment_editor()` and `cd_update_adjustment_editor()`: the Data Adjustment page's editor -- the years removed
+  everywhere and an area's data removed for some or every year; completeness (each indicator group's k, an
+  indicator's own), outliers and missing values set everywhere or with a region's or district's own rules (a
+  two-pane picker for regions and their districts); beside each setting what the check pages found; read-only
+  after Adjust data, until Edit.
+* Tables get their own loader: `cd_table_spinner()` and `cd_loading_skeleton(variant = "table")`.
+* `cd_nav_item(hidden = TRUE)`: a page left out of the sidebar, reached from elsewhere (the Reports page, from the
+  header's button).
+* Requires quire 0.2.16.
+
 # datasuite.ui 0.3.4
 
 * The AI can read a saved report and change parts of it, without replacing it (what the apps' AI bridge actions

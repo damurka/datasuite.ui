@@ -3,6 +3,7 @@ import "./spinner";
 import "./tabswitch";
 import "./dialog";
 import "./aibridge";
+import AdjustmentEditor from "./components/AdjustmentEditor";
 import ChartCustomize from "./components/ChartCustomize";
 import ChipMulti from "./components/ChipMulti";
 import ChipNumber from "./components/ChipNumber";
@@ -31,6 +32,7 @@ import Sidebar from "./components/Sidebar";
 window.jsmodule = {
   ...window.jsmodule,
   "@/countdown": {
+    AdjustmentEditor,
     ChartCustomize,
     ChipMulti,
     ChipNumber,
