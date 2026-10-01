@@ -29,10 +29,11 @@
   )
 }
 
-# One report written by Quire: `format` "docx", "pptx" or "html" (the printable page). Quire's writers run in V8 and
-# turn pictures with magick: suggested packages, which DataSuite installs with the app.
+# One report written by Quire: `format` "docx", "pptx" or "html" (the printable page). Quire's writers run in V8, turn
+# pictures with magick and make the SVG charts pictures with rsvg (magick's own image_read_svg() calls rsvg too: without
+# it every chart was left out): suggested packages, which DataSuite installs with the app.
 .rb_quire_write <- function(context, project, file, format, i18n) {
-  missing <- Filter(function(p) !requireNamespace(p, quietly = TRUE), c("V8", "magick"))
+  missing <- Filter(function(p) !requireNamespace(p, quietly = TRUE), c("V8", "magick", "rsvg"))
   if (length(missing)) .ds_abort(c("x" = "Writing a report needs the {.pkg {missing}} package{?s}.", "i" = "Install with {.code install.packages({.str {missing}})}."))
   lang <- project$lang %||% (if (is.list(i18n) || is.environment(i18n)) i18n$lang) %||% "en"
   project$design$slide_designs <- .rb_quire_designs(project$design$slide_designs)

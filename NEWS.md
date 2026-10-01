@@ -1,5 +1,8 @@
 # datasuite.ui 0.4.2
 
+* Reports written as Word or PowerPoint have their charts again where the rsvg package is not installed: it is suggested,
+  so it is installed with the app, and writing a report without it says so. The SVG charts are made pictures with rsvg
+  (magick's `image_read_svg()` uses it too), and without it every chart was left out of the document.
 * `ds_host_request()`: what an app asks of DataSuite (open the chat, print, install packages), in one place. When
   DataSuite starts the app with `CDSUITE_HOST_UI=1` in a Jovian R kernel, the requests go on Jovian's host channel
   (`hera::host_notify()`, `hera::host_ask()`, methods `datasuite.<action>`): printing waits for DataSuite's answer
