@@ -29,8 +29,11 @@
   )
 }
 
-# One report written by Quire: `format` "docx", "pptx" or "html" (the printable page)
+# One report written by Quire: `format` "docx", "pptx" or "html" (the printable page). Quire's writers run in V8 and
+# turn pictures with magick: suggested packages, which DataSuite installs with the app.
 .rb_quire_write <- function(context, project, file, format, i18n) {
+  missing <- Filter(function(p) !requireNamespace(p, quietly = TRUE), c("V8", "magick"))
+  if (length(missing)) .ds_abort(c("x" = "Writing a report needs the {.pkg {missing}} package{?s}.", "i" = "Install with {.code install.packages({.str {missing}})}."))
   lang <- project$lang %||% (if (is.list(i18n) || is.environment(i18n)) i18n$lang) %||% "en"
   project$design$slide_designs <- .rb_quire_designs(project$design$slide_designs)
   quire::quire_export(project, .rb_quire_host(context, i18n), file, format = format, lang = lang)
@@ -57,7 +60,9 @@
 
 # One chart or table as Quire's render answer (request: the block, the report's design and language, its region):
 # drawn as the builder shows it (the theme and the report's saved chart styling). A chart comes as a picture with its
-# legend entries and panels; a table as its cells (flextable's text as formatted).
+# legend entries and panels; a table as its cells (flextable's text as formatted). The picture is an SVG when svglite
+# is installed, as Quire prefers it (quire::quire_plot()): sharp on screen and in print, and in Word with a PNG Quire
+# makes beside it for the programs that cannot show SVG; PowerPoint has the PNG. Else a PNG.
 .rb_render_request <- function(context, request, i18n, regions) {
   b <- request$block
   if (!is.list(b)) return(quire::quire_error("No block to draw."))
@@ -67,16 +72,25 @@
                 error = function(e) list(type = "error", message = conditionMessage(e)))
   size <- report_block_size(b, design)
   if (identical(r$type, "plot")) {
-    f <- tempfile(fileext = ".png")
+    svg <- requireNamespace("svglite", quietly = TRUE)
+    f <- tempfile(fileext = if (svg) ".svg" else ".png")
     on.exit(unlink(f), add = TRUE)
     dpi <- if (identical(request$purpose, "export")) 300 else 200
     ok <- tryCatch({ save_report_chart(r, b, f, dpi = dpi, design = design); TRUE }, error = function(e) conditionMessage(e))
     if (!isTRUE(ok)) return(quire::quire_error(ok))
-    list(kind = "image", src = paste0("data:image/png;base64,", jsonlite::base64_enc(readBin(f, "raw", file.info(f)$size))),
-         w = size[1], h = size[2],
-         entries = tryCatch(cd_chart_entries(r$value), error = function(e) NULL),
-         # a chart drawn as panels (by year, district...): how, so the builder can change it
-         facets = tryCatch(chart_facet_info(r$value), error = function(e) NULL))
+    bytes <- readBin(f, "raw", file.info(f)$size)
+    if (svg) {
+      text <- rawToChar(bytes)
+      Encoding(text) <- "UTF-8"
+      picture <- list(svg = text)
+    } else {
+      picture <- list(src = paste0("data:image/png;base64,", jsonlite::base64_enc(bytes)))
+    }
+    c(list(kind = "image"), picture,
+      list(w = size[1], h = size[2],
+           entries = tryCatch(cd_chart_entries(r$value), error = function(e) NULL),
+           # a chart drawn as panels (by year, district...): how, so the builder can change it
+           facets = tryCatch(chart_facet_info(r$value), error = function(e) NULL)))
   } else if (identical(r$type, "table")) {
     cd_flextable_render(r$value)
   } else {

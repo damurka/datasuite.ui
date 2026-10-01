@@ -1,9 +1,9 @@
 # Printing inside DataSuite. DataSuite starts an app with CDSUITE_PRINT=1 and then, when asked, prints the printable
 # page itself (Chromium's printing, as chromote does) and draws a PDF's pages as pictures (pdf.js, as pdftools does):
-# a "print" request on the R session's output, answered by a `done` file (DataSuite's shinyAppPrint.contribution.ts).
-# So inside DataSuite the app needs neither chromote nor a Chrome, nor pdftools -- DESCRIPTION's
-# Config/datasuite/onDemand keeps DataSuite from installing them. Anywhere else, or when DataSuite cannot, Quire's own
-# way: chromote and pdftools when they are installed, else the reader's browser prints.
+# a "print" request (ds_host_request(), kit-host.R), answered on Jovian's host channel or in a `done` file
+# (DataSuite's shinyAppPrint.contribution.ts). So inside DataSuite the app needs neither chromote nor a Chrome, nor
+# pdftools -- DESCRIPTION's Config/datasuite/onDemand keeps DataSuite from installing them. Anywhere else, or when
+# DataSuite cannot, Quire's own way: chromote and pdftools when they are installed, else the reader's browser prints.
 
 # Whether DataSuite prints for this app.
 .ds_can_print <- function() identical(Sys.getenv("CDSUITE_PRINT"), "1")
@@ -16,8 +16,7 @@
   dir.create(dir)
   on.exit(unlink(dir, recursive = TRUE), add = TRUE)
   path <- function(p) normalizePath(p, winslash = "/", mustWork = FALSE)
-  done <- file.path(dir, "done.json")
-  request <- list(action = "print", pdf = path(pdf), dpi = dpi, done = path(done))
+  args <- list(pdf = path(pdf), dpi = dpi)
   if (!is.null(html)) {
     is_file <- length(html) == 1 && nchar(html) < 2000 && !grepl("<", html, fixed = TRUE) && file.exists(html)
     page <- html
@@ -25,18 +24,11 @@
       page <- file.path(dir, "page.html")
       writeBin(charToRaw(enc2utf8(paste(html, collapse = "\n"))), page)
     }
-    request$html <- path(page)
+    args$html <- path(page)
   }
-  if (!is.null(pages)) request$pages <- path(pages)
-  message("DATASUITE_HOST_REQUEST ", gsub("[\r\n]+", " ", jsonlite::toJSON(request, auto_unbox = TRUE)))
+  if (!is.null(pages)) args$pages <- path(pages)
 
-  deadline <- Sys.time() + timeout
-  status <- NULL
-  while (is.null(status) && Sys.time() < deadline) {
-    Sys.sleep(0.1)
-    # read once it is complete (it may be seen while still being written)
-    if (file.exists(done)) status <- tryCatch(jsonlite::fromJSON(done), error = function(e) NULL)
-  }
+  status <- ds_host_request("print", args, wait = TRUE, timeout = timeout)
   if (is.null(status)) stop("DataSuite did not print the page in time.", call. = FALSE)
   if (!isTRUE(status$ok)) stop(status$error %||% "DataSuite could not print the page.", call. = FALSE)
   invisible(status)

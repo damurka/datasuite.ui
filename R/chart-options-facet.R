@@ -97,7 +97,7 @@ chart_facet_info <- function(plot) {
   if (!is_wrap && !is_grid) return(NULL)
   params <- facet$params %||% list()
 
-  built <- tryCatch(ggplot2::ggplot_build(plot), error = function(e) NULL)
+  built <- tryCatch(.ds_built(plot), error = function(e) NULL)
   layout <- tryCatch(built$layout$layout, error = function(e) NULL)
   drawn <- function(column, param) {
     if (is.data.frame(layout) && column %in% names(layout) && nrow(layout)) return(as.integer(max(layout[[column]])))

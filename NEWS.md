@@ -1,3 +1,26 @@
+# datasuite.ui 0.4.2
+
+* `ds_host_request()`: what an app asks of DataSuite (open the chat, print, install packages), in one place. When
+  DataSuite starts the app with `CDSUITE_HOST_UI=1` in a Jovian R kernel, the requests go on Jovian's host channel
+  (`hera::host_notify()`, `hera::host_ask()`, methods `datasuite.<action>`): printing waits for DataSuite's answer
+  without watching a file. Otherwise the `DATASUITE_HOST_REQUEST` line on stderr as before (`docs/HOST-REQUESTS.md`).
+* Inside DataSuite, `export_report(format = "pdf")` on a computer without Word or LibreOffice has DataSuite print the
+  report, as the Reports page's PDF does, instead of needing chromote.
+* Charts: a ggplot is built once for its layout, its legend entries, the chart options, its panels and its drawing
+  (it was built three to six times for one chart on the screen or in a report). The image download is the chart on
+  the screen, not drawn again; a chart drawn with base graphics is recorded, so the download is that chart (it was
+  whatever ggplot2 drew last). A chart's errors are logged with `message()` rather than printed, and a plotly chart
+  given to `cd_render_plot()` says it cannot be drawn there.
+* Reports: charts come to Quire as SVG when svglite is installed (sharp on screen, in print and in Word, which gets a
+  PNG beside it; PowerPoint gets the PNG). A PNG chart is drawn with the cairo device when any of its text -- an axis,
+  the legend, the title, labels on the chart -- is in Calibri, Cambria or another font ragg draws blank at some sizes,
+  not only when the theme's base font is.
+* The Get help button shows the docs in the session's host when it can (`rstudioapi::viewer()`: DataSuite's R kernel,
+  RStudio), else in the browser.
+* V8 and magick move to Suggests (Quire's writers need them, and DataSuite installs them with the app; writing a
+  report without them says so). No longer suggests plotly. Suggested packages have minimum versions; suggests
+  rstudioapi.
+
 # datasuite.ui 0.4.1
 
 * Inside DataSuite, DataSuite prints the Reports page's printable page (the PDF) and draws the pictures of its pages

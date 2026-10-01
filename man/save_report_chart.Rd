@@ -2,7 +2,7 @@
 % Please edit documentation in R/report-builder.R
 \name{save_report_chart}
 \alias{save_report_chart}
-\title{Draw a chart block to a PNG file}
+\title{Draw a chart block to a picture file}
 \usage{
 save_report_chart(rendered, block, file, dpi = 200, design = NULL)
 }

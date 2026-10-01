@@ -171,7 +171,7 @@ report_page <- function(design = report_default_design()) {
 # continuous scale, like a map, keeps its own)
 .rb_palette_options <- function(p, design) {
   if (!isTRUE(design$apply_palette) || !length(design$palette) || !inherits(p, "ggplot")) return(NULL)
-  built <- tryCatch(ggplot2::ggplot_build(p), error = function(e) NULL)
+  built <- tryCatch(.ds_built(p), error = function(e) NULL)
   if (is.null(built)) return(NULL)
   for (scale in built$plot$scales$scales) {
     if (!any(c("colour", "fill") %in% scale$aesthetics) || !isTRUE(scale$is_discrete())) next

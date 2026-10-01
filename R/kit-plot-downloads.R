@@ -74,10 +74,11 @@ cd_plot_server <- function(
         if (is.null(opts) || !length(opts)) NULL else opts
       }
 
-      # The plot as its function draws it; the customize panel changes how it is drawn, never what it shows.
+      # The plot as its function draws it; the customize panel changes how it is drawn, never what it shows. A plot drawn
+      # with base graphics is recorded, to be drawn again (kit-plot.R).
       plot_obj <- reactive({
         req(plot_data())
-        plot_fun(plot_data())
+        .ds_capture_plot(function() plot_fun(plot_data()))
       })
 
       # What the panel holds. Until it has reported (or been handed the stored values when it mounted) the stored options are
@@ -151,18 +152,12 @@ cd_plot_server <- function(
         icon = "camera",
         button_class = "cd-tool-btn",
         content = function(file, d) {
-          # The image carries the same changes as the screen.
-          drawn <- plot_fun(d)
-          opts <- isolate(chart_options())
-          lay <- cd_chart_layout(drawn, opts$flip)
-          p <- cd_apply_chart_options(drawn, opts, lay)
+          # The image is the chart on the screen, with the same changes (`d`, the data the download is given, is the
+          # data it draws).
+          p <- isolate(final_plot())
+          lay <- isolate(layout())
           height_px <- max(2160, round(lay$height / 400 * 2160 * 0.75))
-          if (inherits(p, "ggplot")) {
-            ggsave(file, plot = p, width = 3840, height = height_px, dpi = 300, units = "px")
-          } else {
-            # a base-graphics plot: it has just been drawn, so save what is on the device
-            ggsave(file, width = 3840, height = 2160, dpi = 300, units = "px")
-          }
+          .ds_save_plot(file, p, width = 3840, height = if (inherits(p, "ggplot")) height_px else 2160, dpi = 300)
         }
       )
 
@@ -185,4 +180,29 @@ cd_plot_server <- function(
       }
     }
   )
+}
+
+# Writes a plot to an image file (its type from the file's extension, as ggsave() does), `width` and `height` in
+# pixels: a ggplot from its kept build (kit-chart-build.R), a recorded base-graphics plot (.ds_capture_plot())
+# replayed on the file's device.
+.ds_save_plot <- function(file, p, width, height, dpi = 300) {
+  if (inherits(p, "ggplot")) {
+    # ggsave() takes the background from a ggplot, not from what it is given here: the plot's own
+    background <- ggplot2::calc_element("plot.background", ggplot2::theme_get() + p$theme)
+    bg <- if (inherits(background, "element_rect")) background$fill %||% "transparent" else "transparent"
+    ggsave(file, plot = ggplot2::ggplot_gtable(.ds_built(p)), width = width, height = height, dpi = dpi, units = "px", bg = bg)
+    return(invisible(file))
+  }
+  if (!inherits(p, "recordedplot")) .ds_abort(c("x" = "This chart cannot be saved as a picture."))
+  inches <- c(width, height) / dpi
+  switch(
+    tolower(tools::file_ext(file)),
+    svg = grDevices::svg(file, width = inches[1], height = inches[2]),
+    pdf = grDevices::pdf(file, width = inches[1], height = inches[2]),
+    jpg = , jpeg = grDevices::jpeg(file, width = width, height = height, res = dpi),
+    grDevices::png(file, width = width, height = height, res = dpi)
+  )
+  on.exit(grDevices::dev.off(), add = TRUE)
+  grDevices::replayPlot(p)
+  invisible(file)
 }

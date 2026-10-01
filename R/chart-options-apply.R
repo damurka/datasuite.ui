@@ -15,14 +15,21 @@
 apply_chart_options <- function(p, options = NULL) {
   o <- as_chart_options(options)
   if (!inherits(p, "ggplot") || length(o) == 0) return(p)
+  given <- p
   p <- .clone_plot(p)
 
   legend_aes <- c("fill", "colour", "color", "shape", "linetype", "size", "alpha")
 
-  # the built plot tells which scales are discrete/continuous; needed by several steps, built at most once
+  # the built plot tells which scales are discrete/continuous and their limits; needed by several steps, built at most
+  # once. What comes before the first of them (the texts, the legend title) changes none of that, so the plot given is
+  # built (it usually has been already: kit-chart-build.R) -- unless its legend entries were renamed, which the colour
+  # step reads from the build.
   built <- NULL
   get_built <- function() {
-    if (is.null(built)) built <<- tryCatch(ggplot2::ggplot_build(p), error = function(e) FALSE)
+    if (is.null(built)) {
+      renamed <- !is.null(o$legend_labels) || !is.null(o$legend_label_wrap)
+      built <<- tryCatch(if (renamed) ggplot2::ggplot_build(p) else .ds_built(given), error = function(e) FALSE)
+    }
     if (isFALSE(built)) NULL else built
   }
 

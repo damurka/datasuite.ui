@@ -231,13 +231,11 @@ ai_register_component <- function(session, output_id, type = c("chart", "table")
 # for something (the chat, for the Ask AI buttons).
 .cd_in_datasuite <- function() nzchar(Sys.getenv("CDSUITE_SHINY_ID"))
 
-# Asks DataSuite for something: one line on the R session's output, which DataSuite reads (its shinyAppAiBridge.ts).
-# message() goes to stderr, which is not buffered.
+# Asks DataSuite for something, without waiting (ds_host_request(), kit-host.R; DataSuite's shinyAppAiBridge.ts
+# acts on it), only when the app runs inside DataSuite.
 .ai_host_request <- function(action, ...) {
   if (!.cd_in_datasuite()) return(invisible(FALSE))
-  line <- jsonlite::toJSON(c(list(action = action), list(...)), auto_unbox = TRUE)
-  message("DATASUITE_HOST_REQUEST ", gsub("[\r\n]+", " ", line))
-  invisible(TRUE)
+  ds_host_request(action, list(...))
 }
 
 # The chat prompt an Ask AI button starts, in the language on screen: about one card (`asked$title`) or the page.

@@ -36,7 +36,6 @@
 #' @importFrom stringr str_glue_data
 #' @importFrom purrr map walk
 #' @importFrom openxlsx createWorkbook saveWorkbook
-#' @importFrom V8 v8
 #' @rawNamespace exportPattern("^[[:alpha:]]")
 "_PACKAGE"
 

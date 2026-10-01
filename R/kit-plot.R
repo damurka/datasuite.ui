@@ -15,7 +15,9 @@ cd_plot_client_height <- function(fallback) {
 }
 
 # `height` is a function returning the plot's height in pixels; the plot output must be created with height = "auto"
-# (see cd_plot_output()) so the chart can grow with the number of categories it draws.
+# (see cd_plot_output()) so the chart can grow with the number of categories it draws. `expr` is evaluated once: a
+# ggplot it gives is drawn (from its kept build, kit-chart-build.R), a recorded plot (.ds_capture_plot()) replayed, and
+# a plot drawn with base graphics while it ran is already on the device.
 cd_render_plot <- function(expr, height = function() cd_plot_client_height(400)) {
   # Helper function to generate an error plot
   generate_error_plot <- function(message, color = 'red') {
@@ -27,15 +29,8 @@ cd_render_plot <- function(expr, height = function() cd_plot_client_height(400))
     )
   }
 
-  # Convert expression to a function
-  func <- tryCatch({
-    as_function(enquo(expr))
-  }, error = function(e) {
-    function() generate_error_plot(paste('Error parsing expression:', .ds_clean_error(e)))
-  })
-
   renderPlot({
-    # Evaluate the data from func
+    # Evaluate the plot (or its data) once
     check_data <- tryCatch(
       eval_tidy(enquo(expr)),
       error = function(e) e
@@ -53,31 +48,51 @@ cd_render_plot <- function(expr, height = function() cd_plot_client_height(400))
         (is.vector(check_data) && length(check_data) == 0) ||
         (is.matrix(check_data) && nrow(check_data) == 0)) { #Added matrix check
 
-      message <- .ds_clean_error(check_data)
+      text <- .ds_clean_error(check_data)
 
-      if (nchar(message) == 0 || message == '') {
+      if (nchar(text) == 0 || text == '') {
         generate_error_plot('No data available', 'gray')
       } else {
-        print(check_data)
-        generate_error_plot(message, 'red')
+        # validate()'s message is for the screen; anything else is a failure, logged too
+        if (!inherits(check_data, "validation")) message('Error drawing a chart: ', text)
+        generate_error_plot(text, 'red')
       }
       return() # Return early, no progress or further processing
     }
     tryCatch({
       if (inherits(check_data, "ggplot")) {
-        print(check_data) # ggplot object
-      } else if (inherits(check_data, "plotly")) {
-        plotly::plotlyOutput(check_data)
-      } else {
-        func() # Base R plot
+        .ds_draw_plot(check_data)
+      } else if (inherits(check_data, "recordedplot")) {
+        grDevices::replayPlot(check_data)
+      } else if (inherits(check_data, "htmlwidget")) {
+        # a plotly chart (any htmlwidget) is a web page, not a picture: it needs its own output (plotly::plotlyOutput())
+        generate_error_plot('This chart is interactive and cannot be drawn here.', 'gray')
       }
+      # anything else: a plot drawn with base graphics, already drawn while `expr` ran
     },
     error = function(e) {
-      print(e)
-      # if (inherits(e, 'shiny.silent.error')) return()
+      message('Error drawing a chart: ', .ds_clean_error(e))
       generate_error_plot(paste('Error:', .ds_clean_error(e)))
     })
   }, height = height)
+}
+
+# What a plot function gives, ready to draw again: a ggplot (or anything else it returns) as it is, but a plot it
+# drew with base graphics recorded (grDevices::recordPlot()), so that the screen, a resize and the image download all
+# draw it. It runs on an off-screen device of its own, so nothing is drawn where it is not wanted.
+.ds_capture_plot <- function(fun) {
+  old <- grDevices::dev.cur()
+  grDevices::pdf(NULL)
+  dev <- grDevices::dev.cur()
+  on.exit({
+    grDevices::dev.off(dev)
+    if (old > 1) grDevices::dev.set(old)
+  }, add = TRUE)
+  grDevices::dev.control("enable")
+  value <- fun()
+  if (inherits(value, "ggplot")) return(value)
+  drawn <- grDevices::recordPlot()
+  if (length(drawn[[1]])) drawn else value
 }
 
 cd_plot_output <- function(id) {

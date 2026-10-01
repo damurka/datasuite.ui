@@ -3,7 +3,8 @@
 # The files are written by Quire's writers, the builder's own (quire::quire_export(), R/report-quire.R): a report
 # written here is the file the builder downloads. The PDF is made FROM the Word file (Microsoft Word, or LibreOffice),
 # so both have the same pages and page breaks; report_final_pages() renders those pages. Only when neither program is
-# installed is the PDF printed from Quire's printable page in a browser (close to the Word file, but not page for page).
+# installed is the PDF printed from Quire's printable page in a browser (close to the Word file, but not page for page):
+# by DataSuite inside it (report-print.R), else with chromote.
 
 # ---- chart options -------------------------------------------------------------------------------------------------
 
@@ -88,7 +89,8 @@ export_report <- function(context, project, file, format = c("docx", "pdf", "ppt
     html <- file.path(dir, "report.html")
     .rb_quire_write(context, project, html, "html", i18n)
     step(0.8)
-    quire::quire_html_pdf(html, file)
+    # inside DataSuite it prints the page, as it does the builder's PDF (report-print.R); elsewhere chromote
+    if (.ds_can_print()) .ds_print(file, html = html) else quire::quire_html_pdf(html, file)
     step(1)
     return(invisible(structure(file, converter = "browser")))
   }

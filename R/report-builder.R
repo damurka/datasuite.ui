@@ -65,7 +65,7 @@ render_report_block <- function(context, block, i18n = NULL, design = NULL) {
         slide <- if (!is.null(box)) .rb_slide_text_options(value, box)
         if (length(palette) || length(slide) || length(own)) value <- apply_chart_options(value, merge_chart_options(palette, slide, own))
         # a ggplot is built only when it is printed: build it now, so a chart that cannot be drawn says so here
-        ggplot2::ggplot_build(value)
+        .ds_built(value)
         list(type = "plot", value = value)
       } else if (inherits(value, "flextable")) {
         list(type = "table", value = value)
@@ -89,7 +89,7 @@ render_report_block <- function(context, block, i18n = NULL, design = NULL) {
                x_text_size = s, y_text_size = s, legend_title_size = s, legend_text_size = s, strip_text_size = s,
                label_size = max(8, s - 2), title_wrap = max(15, floor(box[1] * 72 / ((s + 4) * 0.52))),
                legend_key_size = round(s * 0.45, 1))
-  built <- tryCatch(ggplot2::ggplot_build(p), error = function(e) NULL)
+  built <- tryCatch(.ds_built(p), error = function(e) NULL)
   if (is.null(built)) return(do.call(cd_chart_options, opts))
   # text of `n` characters at this size, in inches
   inches <- function(n) n * s * 0.55 / 72
@@ -201,7 +201,7 @@ report_block_size <- function(block, design = NULL) {
   crop
 }
 
-#' Draw a chart block to a PNG file
+#' Draw a chart block to a picture file
 #'
 #' Charts are written as SVG (vector: sharp at any size, on screen, printed or in the PDF Word makes) when the
 #' \pkg{svglite} package is installed and `file` ends in `.svg`; otherwise as PNG at `dpi`.
@@ -214,27 +214,22 @@ report_block_size <- function(block, design = NULL) {
 #' @return `file`, invisibly.
 #' @export
 save_report_chart <- function(rendered, block, file, dpi = 200, design = NULL) {
-  # a narrow chart is drawn somewhat larger and shown smaller, so its legend and labels fit; not by more than 40%, so its
-  # text stays readable once shrunk. A chart on a slide is drawn at its box's size, as it is in the slide file.
-  shown <- report_block_size(block, design)
-  size <- if (!is.null(.rb_box(block))) shown else shown * min(1.4, max(1, 4.6 / shown[1]))
+  size <- .rb_drawn_size(block, design)
   if (grepl("\\.svg$", file)) {
     svglite::svglite(file, width = size[1], height = size[2])
     on.exit(grDevices::dev.off(), add = TRUE)
-    print(rendered$value)
+    .ds_draw_plot(rendered$value)
     return(invisible(file))
   }
   draw <- function(device) {
     device(file, width = size[1], height = size[2], units = "in", res = dpi)
     on.exit(grDevices::dev.off(), add = TRUE)
-    print(rendered$value)
+    .ds_draw_plot(rendered$value)
   }
   # ragg draws nothing, or only some letters, without an error, for some sizes of the fonts that carry bitmap versions of
   # their letters (Calibri, Cambria and the other ClearType fonts); the cairo device draws them
   cairo <- function(...) grDevices::png(..., type = "cairo")
-  family <- tryCatch(ggplot2::calc_element("text", ggplot2::theme_grey() + rendered$value$theme)$family, error = function(e) "")
-  bitmap_font <- isTRUE(family %in% c("Calibri", "Cambria", "Candara", "Consolas", "Constantia", "Corbel"))
-  if (bitmap_font && isTRUE(capabilities("cairo"))) {
+  if (isTRUE(capabilities("cairo")) && any(.rb_plot_families(rendered$value) %in% .rb_bitmap_fonts)) {
     draw(cairo)
   } else if (requireNamespace("ragg", quietly = TRUE)) {
     draw(ragg::agg_png)
@@ -243,6 +238,29 @@ save_report_chart <- function(rendered, block, file, dpi = 200, design = NULL) {
     draw(grDevices::png)
   }
   invisible(file)
+}
+
+# The size a chart block is drawn at, in inches: a narrow chart somewhat larger than it is shown, so its legend and
+# labels fit (not by more than 40%, so its text stays readable once shrunk); a chart on a slide at its box's size, as
+# it is in the slide file
+.rb_drawn_size <- function(block, design = NULL) {
+  shown <- report_block_size(block, design)
+  if (!is.null(.rb_box(block))) shown else shown * min(1.4, max(1, 4.6 / shown[1]))
+}
+
+# The fonts that carry bitmap versions of their letters (ragg draws some sizes of them blank)
+.rb_bitmap_fonts <- c("Calibri", "Cambria", "Candara", "Consolas", "Constantia", "Corbel")
+
+# Every font a ggplot's text is drawn in: the theme's text and each of its text elements given a font of their own (an
+# axis, the legend, the title...), and the font of text drawn on the chart (geom_text(), geom_label())
+.rb_plot_families <- function(p) {
+  if (!inherits(p, "ggplot")) return(character())
+  theme <- tryCatch(ggplot2::theme_get() + p$theme, error = function(e) NULL)
+  families <- tryCatch(ggplot2::calc_element("text", theme)$family, error = function(e) NULL)
+  for (element in theme) if (inherits(element, "element_text")) families <- c(families, element$family)
+  for (layer in p$layers) families <- c(families, layer$aes_params$family, layer$geom$default_aes$family)
+  families <- as.character(unlist(families))
+  unique(families[!is.na(families) & nzchar(families)])
 }
 
 # Whether a PNG is one flat colour (nothing was drawn)

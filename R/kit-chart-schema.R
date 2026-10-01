@@ -19,7 +19,7 @@ cd_chart_schema <- function(i18n = NULL) {
 # the panel unusable.
 cd_chart_entries <- function(p, max_entries = 30) {
   if (!inherits(p, "ggplot")) return(list())
-  built <- tryCatch(ggplot2::ggplot_build(p), error = function(e) NULL)
+  built <- tryCatch(.ds_built(p), error = function(e) NULL)
   if (is.null(built)) return(list())
 
   legend <- list()

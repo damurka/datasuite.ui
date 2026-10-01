@@ -29,10 +29,11 @@ at the same time.
 install.packages("datasuite.ui", repos = c("https://damurka.r-universe.dev", "https://cloud.r-project.org"))
 ```
 
-The suggested packages turn on parts of the report builder: `chromote` (PDF without Word or LibreOffice), `pdftools`
-(showing the final pages), `rvg` (editable charts in PowerPoint), `magick`, `rsvg`, `svglite`, `ragg`, `png` (pictures),
-`zip` (finishing Word and PowerPoint files), `systemfonts` (only offering installed fonts), `plotly`, `dplyr`,
-`countrycode`. Without them those features do less or say what is missing.
+The suggested packages turn on parts of the report builder: `V8` and `magick` (writing Word, PowerPoint and PDF files
+from R, with Quire's writers), `pdftools` (showing the final pages), `svglite` (charts as SVG), `ragg`, `png`
+(pictures), `systemfonts` (only offering installed fonts), `rstudioapi` (the help in the session's viewer), `dplyr`,
+`countrycode`; and through quire, `chromote` (a PDF without Word or LibreOffice, outside DataSuite). Without them those
+features do less or say what is missing.
 
 ## A minimal app
 

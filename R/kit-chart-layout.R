@@ -9,7 +9,7 @@ ROW_HEIGHT_PX <- 26
 
 # The number of categories on each axis of the plot as data (0 for a continuous axis)
 cd_chart_axes <- function(p) {
-  built <- ggplot2::ggplot_build(p)
+  built <- .ds_built(p)
   count <- function(scale) {
     if (!is.null(scale) && isTRUE(scale$is_discrete())) length(scale$get_limits()) else 0L
   }

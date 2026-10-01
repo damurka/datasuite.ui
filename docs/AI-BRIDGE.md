@@ -141,14 +141,17 @@ Errors in an action come back as `{ ok: false, error: <the condition message> }`
 
 ### Requests to DataSuite
 
-An app asks DataSuite for something by writing a line to its R session's output:
+An app asks DataSuite for something with `ds_host_request()`, only when the app runs in DataSuite
+(`CDSUITE_SHINY_ID` is set): on Jovian's host channel (`hera::host_notify("datasuite.openChat", ...)`) when DataSuite
+started it with `CDSUITE_HOST_UI=1`, else by writing a line to its R session's output:
 
 ```
 DATASUITE_HOST_REQUEST {"action":"openChat","query":"Explain \"Reporting rate\": "}
 ```
 
-datasuite.ui writes it with `message()` (stderr, unbuffered) and only when the app runs in DataSuite
-(`CDSUITE_SHINY_ID` is set). DataSuite (`shinyAppAiBridge.ts`) acts on lines from an app open in a Shiny tab only.
+The line is written with `message()` (stderr, unbuffered). DataSuite (`shinyAppAiBridge.ts`) acts on requests from an
+app open in a Shiny tab only. Both channels, every request (the chat, printing, installing packages) and what DataSuite
+answers: [`HOST-REQUESTS.md`](HOST-REQUESTS.md).
 
 | Action | Args | What DataSuite does |
 | --- | --- | --- |

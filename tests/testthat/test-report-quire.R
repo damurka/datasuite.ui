@@ -48,3 +48,19 @@ test_that("a deck is written as PowerPoint by Quire, each item at its box", {
   expect_match(quire_part(f, "ppt/slides/slide1.xml"), "Examplia")
   expect_true(any(grepl("^ppt/media/", names)))
 })
+
+test_that("a chart comes to Quire as an SVG with svglite, which Word gets with a PNG beside it", {
+  skip_if_not_installed("svglite")
+  r <- .rb_render_request(quire_ctx(), list(block = list(id = "c", type = "chart", kind = "bars", size = "full")), NULL, character())
+  expect_equal(r$kind, "image")
+  expect_null(r$src)
+  expect_match(r$svg, "<svg", fixed = TRUE)
+  expect_match(r$svg, "Coast", fixed = TRUE)
+
+  doc <- list(id = "r1", name = "Review", lang = "en", design = list(), blocks = list(list(id = "c", type = "chart", kind = "bars", size = "full")))
+  f <- tempfile(fileext = ".docx")
+  export_report(quire_ctx(), doc, f, converter = "libreoffice")
+  media <- grep("^word/media/", utils::unzip(f, list = TRUE)$Name, value = TRUE)
+  expect_true(any(grepl("[.]svg$", media)))
+  expect_true(any(grepl("[.]png$", media)))
+})
