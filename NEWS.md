@@ -1,5 +1,6 @@
 # datasuite.ui 0.4.2
 
+* Requires quire 0.2.17, as the apps do (a data table's alignment in the builder, Word, PowerPoint and print).
 * Reports written as Word or PowerPoint have their charts again where the rsvg package is not installed: it is suggested,
   so it is installed with the app, and writing a report without it says so. The SVG charts are made pictures with rsvg
   (magick's `image_read_svg()` uses it too), and without it every chart was left out of the document.
