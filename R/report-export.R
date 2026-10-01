@@ -125,14 +125,22 @@ report_final_pages <- function(context, project, i18n = NULL, dpi = 60, progress
     .ds_abort(c("x" = if (deck) "Showing the final slides needs Microsoft PowerPoint or LibreOffice on the computer running the app."
                else "Showing the final pages needs Microsoft Word or LibreOffice on the computer running the app."))
   }
-  if (!requireNamespace("pdftools", quietly = TRUE)) .ds_abort(c("x" = "Showing the final pages needs the {.pkg pdftools} package."))
+  # the pages are drawn by DataSuite inside it (report-print.R), else by pdftools
+  if (!.ds_can_print() && !requireNamespace("pdftools", quietly = TRUE)) {
+    .ds_abort(c("x" = "Showing the final pages needs the {.pkg pdftools} package."))
+  }
   out <- tempfile("pages_")
   dir.create(out)
   pdf <- file.path(out, "report.pdf")
   export_report(context, project, pdf, "pdf", i18n = i18n, progress = function(x) if (is.function(progress)) progress(0.9 * x), converter = converter)
-  n <- pdftools::pdf_info(pdf)$pages
-  files <- file.path(out, sprintf("page_%03d.png", seq_len(n)))
-  pdftools::pdf_convert(pdf, format = "png", dpi = dpi, filenames = files, verbose = FALSE)
+  if (.ds_can_print()) {
+    .ds_print(pdf, pages = out, dpi = dpi)
+    files <- sort(list.files(out, pattern = "^page_[0-9]+[.]png$", full.names = TRUE))
+  } else {
+    n <- pdftools::pdf_info(pdf)$pages
+    files <- file.path(out, sprintf("page_%03d.png", seq_len(n)))
+    pdftools::pdf_convert(pdf, format = "png", dpi = dpi, filenames = files, verbose = FALSE)
+  }
   if (is.function(progress)) progress(1)
   list(pages = files, converter = converter, pdf = pdf)
 }

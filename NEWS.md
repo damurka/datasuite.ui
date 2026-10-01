@@ -1,3 +1,11 @@
+# datasuite.ui 0.4.1
+
+* Inside DataSuite, DataSuite prints the Reports page's printable page (the PDF) and draws the pictures of its pages
+  for Print Preview and the final pages, so the app needs neither chromote and a Chrome browser nor pdftools there
+  (DESCRIPTION's `Config/datasuite/onDemand` keeps DataSuite from installing them). Outside DataSuite, or if it
+  cannot, printing is as before.
+* No longer suggests chromote or rsvg.
+
 # datasuite.ui 0.4.0
 
 * The Reports page's builder is Quire (the quire package). `reports_ui()` and `reports_server()` keep their names and

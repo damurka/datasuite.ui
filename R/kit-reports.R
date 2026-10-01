@@ -243,7 +243,7 @@ reports_server <- function(id, cache, i18n, active = reactive(TRUE)) {
         th$palette <- as.list(th$palette)
         th
       },
-      # (a PDF of the printable page, and its pages for Print Preview: Quire's own, printed with Chrome or Edge)
+      # (a PDF of the printable page, and its pages for Print Preview: see `pdf` and `pages` below)
       # a Word, PowerPoint or PDF file the builder wrote: kept here and downloaded through the page's (hidden) link, which
       # reaches the reader in DataSuite's window as in a browser
       saveFile = function(file) {
@@ -255,7 +255,10 @@ reports_server <- function(id, cache, i18n, active = reactive(TRUE)) {
         state$file <- path
         state$file_name <- paste0(gsub("^_|_$", "", base), "_", format(Sys.Date()), ".", ext)
         list(path = state$file_name, url = paste0("session/", session$token, "/download/", session$ns("file"), "?w="))
-      }
+      },
+      # printing (PDF, Print Preview): DataSuite's inside DataSuite; elsewhere (NULL) Quire's own (report-print.R)
+      pdf = .ds_host_pdf(),
+      pages = .ds_host_pages()
     )
 
     studio <- quire::quire_server("studio", host, on_event = function(name, data) {

@@ -22,7 +22,10 @@
     assetGet = function(id) {
       url <- report_asset_data_url(context, id)
       if (is.character(url) && startsWith(url, "data:")) list(type = sub("^data:([^;,]+).*$", "\\1", url), data = sub("^data:[^,]*,", "", url))
-    }
+    },
+    # inside DataSuite it prints; elsewhere (NULL) Quire's own way (report-print.R)
+    pdf = .ds_host_pdf(),
+    pages = .ds_host_pages()
   )
 }
 
