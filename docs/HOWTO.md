@@ -70,7 +70,9 @@ are easy to miss: add `opt_<indicator>` for every indicator an app offers.
 
 ## Add a React component
 
-1. `js/src/components/MyThing.tsx`. For an input, wrap with `InputAdapter` (`@/shiny.react`) so it has a value/`updateReactInput`;
+1. `datasuite-ui-kit/packages/components/src/components/MyThing.tsx` (`@quire/components`; exported from its `src/index.ts`).
+   Reach Shiny only through `uiHost()` (`host.ts`). For an input, take `value`/`onChange` props, add its mapping to
+   `inputValueProps` (`inputs.ts`), and wrap it with `InputAdapter` (`@/shiny.react`) in `js/src/index.ts` so it has a value/`updateReactInput`;
    send `input$<id>__mounted` on mount (copy `FieldSelect.tsx`) if R will push values to it. Take every piece of text from props as
    `{en, fr, pt}` and show it with `tr(text, useLang())`.
 2. Register it in `js/src/index.ts` (`window.jsmodule["@/countdown"]`).

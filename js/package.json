@@ -5,6 +5,7 @@
   "description": "React components for the Countdown Shiny apps, rendered through shiny.react",
   "scripts": {
     "typecheck": "tsc --noEmit",
+    "prebuild": "npm --prefix ../../datasuite-ui-kit/packages/components run build",
     "build": "npm run typecheck && webpack --mode production",
     "watch": "webpack --mode development --watch"
   },
@@ -23,6 +24,7 @@
     "webpack-cli": "^5.1.4"
   },
   "dependencies": {
+    "@quire/components": "file:../../datasuite-ui-kit/packages/components",
     "@tiptap/core": "^3.31.3",
     "@tiptap/extension-file-handler": "^3.31.3",
     "@tiptap/extension-image": "^3.31.3",

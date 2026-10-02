@@ -1,58 +1,71 @@
-import "./lang";
 import "./spinner";
 import "./tabswitch";
 import "./dialog";
-import "./aibridge";
-import AdjustmentEditor from "./components/AdjustmentEditor";
-import ChartCustomize from "./components/ChartCustomize";
-import ChipMulti from "./components/ChipMulti";
-import ChipNumber from "./components/ChipNumber";
-import ChipSelect from "./components/ChipSelect";
-import CardHeader from "./components/CardHeader";
-import CdButton from "./components/CdButton";
-import CdCheckbox from "./components/CdCheckbox";
-import CdTextArea from "./components/CdTextArea";
-import DownloadButtonStatus from "./components/DownloadButtonStatus";
-import EmptyState from "./components/EmptyState";
-import ExpandButton from "./components/ExpandButton";
-import FieldNumber from "./components/FieldNumber";
-import FieldSelect from "./components/FieldSelect";
-import FileUploadZone from "./components/FileUploadZone";
-import LoadingSkeleton from "./components/LoadingSkeleton";
-import MappingModal from "./components/MappingModal";
-import MessageBoxStatus from "./components/MessageBoxStatus";
-import StatusBanner from "./components/StatusBanner";
-import Tooltip from "./components/Tooltip";
-import WizardSteps from "./components/WizardSteps";
-import { HeaderBreadcrumb, HeaderActions } from "./components/HeaderBar";
-import Sidebar from "./components/Sidebar";
+import { askAi } from "./aibridge";
+import { InputAdapter } from "@/shiny.react";
+import {
+  AdjustmentEditor,
+  ChartCustomize,
+  ChipMulti,
+  ChipNumber,
+  ChipSelect,
+  CardHeader,
+  CdButton,
+  CdCheckbox,
+  CdTextArea,
+  DownloadButtonStatus,
+  EmptyState,
+  ExpandButton,
+  FieldNumber,
+  FieldSelect,
+  FileUploadZone,
+  LoadingSkeleton,
+  MappingModal,
+  MessageBoxStatus,
+  StatusBanner,
+  Tooltip,
+  WizardSteps,
+  HeaderBreadcrumb,
+  HeaderActions,
+  Sidebar,
+  inputValueProps,
+  setUiHost,
+  shinyHost,
+} from "@quire/components";
+
+// The components come from @quire/components (datasuite-ui-kit), whose host is Shiny by default; the header's Ask AI
+// button goes to the AI bridge here (aibridge.ts).
+setUiHost({ ...shinyHost, askAi });
+
+// The inputs among them, made Shiny inputs (input$<inputId>, updateReactInput()) with shiny.react.
+const v = inputValueProps;
 
 // Components are used from R as shiny.react::reactElement(module = "@/countdown", name = "<Component>", ...)
 // -- see cd_react_element() in apps/rmncah/_shared/R/core (and components/).
 window.jsmodule = {
   ...window.jsmodule,
   "@/countdown": {
-    AdjustmentEditor,
-    ChartCustomize,
-    ChipMulti,
-    ChipNumber,
-    ChipSelect,
+    AdjustmentEditor: InputAdapter(AdjustmentEditor, v.AdjustmentEditor),
+    ChartCustomize: InputAdapter(ChartCustomize, v.ChartCustomize),
+    ChipMulti: InputAdapter(ChipMulti, v.ChipMulti),
+    ChipNumber: InputAdapter(ChipNumber, v.ChipNumber),
+    ChipSelect: InputAdapter(ChipSelect, v.ChipSelect),
     CardHeader,
     CdButton,
-    CdCheckbox,
-    CdTextArea,
+    CdCheckbox: InputAdapter(CdCheckbox, v.CdCheckbox),
+    CdTextArea: InputAdapter(CdTextArea, v.CdTextArea),
     DownloadButtonStatus,
     EmptyState,
     ExpandButton,
-    FieldNumber,
-    FieldSelect,
+    FieldNumber: InputAdapter(FieldNumber, v.FieldNumber),
+    FieldSelect: InputAdapter(FieldSelect, v.FieldSelect),
     FileUploadZone,
     LoadingSkeleton,
-    MappingModal,
+    MappingModal: InputAdapter(MappingModal, v.MappingModal),
     MessageBoxStatus,
     StatusBanner,
     Tooltip,
-    WizardSteps,
+    WizardSteps: InputAdapter(WizardSteps, v.WizardSteps),
     HeaderBreadcrumb,
     HeaderActions,
     Sidebar,

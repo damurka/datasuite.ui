@@ -933,7 +933,7 @@ a new theme is one CSS block. **Never hard-code a brand colour in a component.**
 
 ## 12. The React side
 
-R function -> React component (`js/src/components/*.tsx`), all registered in `js/src/index.ts` under `window.jsmodule["@/countdown"]` and created from R by `cd_react_element("<Name>", props)`.
+R function -> React component (from `@quire/components`: `datasuite-ui-kit/packages/components/src/components/*.tsx`), all registered in `js/src/index.ts` under `window.jsmodule["@/countdown"]` and created from R by `cd_react_element("<Name>", props)`.
 
 | R | React component | Notes |
 | --- | --- | --- |
@@ -951,10 +951,10 @@ R function -> React component (`js/src/components/*.tsx`), all registered in `js
 | `cd_download_status` | `DownloadButtonStatus` | |
 | `cd_shell_server` (sidebar, header) | `Sidebar`, `HeaderBreadcrumb`, `HeaderActions` (in `HeaderBar.tsx`) | |
 
-Scripts that are not components: `lang.ts` (the `cd-lang` message and `useLang()`; every text prop is `{en, fr, pt}` shown with `tr(text, lang)`), `nav.ts` (top-level page switching, sidebar and collapse state, the `cd-navigate` message, a `resize` after each switch so
+Scripts that are not components (in `@quire/components`, which reaches Shiny through its host, `host.ts`: `lang.ts`, `nav.ts`, `matching.ts`, `usePopover.ts`; here in `js/src`: `tabswitch.ts`, `spinner.ts`, `dialog.ts`, `aibridge.ts`): `lang.ts` (the `cd-lang` message and `useLang()`; every text prop is `{en, fr, pt}` shown with `tr(text, lang)`), `nav.ts` (top-level page switching, sidebar and collapse state, the `cd-navigate` message, a `resize` after each switch so
 Shiny re-checks which outputs are visible), `tabswitch.ts` (`cd-tab-switch`, for `cd_update_tab_panes`), `spinner.ts` (the skeleton state machine), `dialog.ts` (closing dialogs), `matching.ts` (region auto-matching), `usePopover.ts`.
 
-Build: `cd js && npm run build` (type-check, then webpack) writes `inst/www/cd-react/cd-react.js`, which is committed. See `HOWTO.md` -> "Add a React component".
+Build: `cd js && npm run build` (builds `@quire/components` first, then type-check and webpack) writes `inst/www/cd-react/cd-react.js`, which is committed. See `HOWTO.md` -> "Add a React component".
 
 ---
 
