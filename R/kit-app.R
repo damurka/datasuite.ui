@@ -37,6 +37,10 @@ app_frame <- function(app_name, app_version, theme, nav_sections, registry, i18n
     # React components render their own text, in all languages, so a language change is one message to the browser
     # rather than an update to each component.
     active_language <- reactiveVal(language)
+    # The session's language from the start: i18n$t() in a chart or a table follows it only once it exists, and
+    # shiny.i18n makes it on the first update_lang() -- so what was drawn before the first switch kept the old
+    # language (and what was drawn after followed).
+    shiny.i18n::update_lang(language, session)
     show_language <- function(lang) {
       shiny.i18n::update_lang(lang)
       cd_set_language(session, lang)

@@ -1,3 +1,9 @@
+# datasuite.ui 0.4.3
+
+* Charts and tables already on screen are drawn again in the new language when the language changes. The session's
+  language now exists from the start (shiny.i18n made it on the first change, so what was drawn before the first change
+  never followed it), and `cd_plain_text()` uses it.
+
 # datasuite.ui 0.4.2
 
 * Requires quire 0.2.17, as the apps do (a data table's alignment in the builder, Word, PowerPoint and print).

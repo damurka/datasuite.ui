@@ -24,9 +24,10 @@ cd_key <- function(x) {
 }
 
 # Plain-text translation. i18n$translate() returns markup while the page is being built, so look the
-# text up directly. `lang` defaults to the translator's language.
+# text up directly. `lang` defaults to the session's language (what the user picked; read in a chart or a table, it
+# draws it again when the language changes), else the translator's.
 cd_plain_text <- function(i18n, key, lang = NULL) {
-  lang <- lang %||% i18n$get_translation_language()
+  lang <- lang %||% .cd_session_language() %||% i18n$get_translation_language()
   tr <- i18n$get_translations()
   if (!key %in% rownames(tr) || !lang %in% names(tr)) return(key)
   val <- tr[key, lang]
@@ -118,4 +119,12 @@ cd_translations <- function(app_file = character(), extra = character()) {
     out, auto_unbox = TRUE, pretty = TRUE
   )
   out
+}
+
+# The session's language (shiny.i18n's, set by update_lang()), or NULL outside a session or before it has one
+.cd_session_language <- function(session = shiny::getDefaultReactiveDomain()) {
+  if (is.null(session)) return(NULL)
+  if (inherits(session, "session_proxy")) session <- session$rootScope()
+  lang <- session$userData$shiny.i18n$lang
+  if (is.function(lang)) lang() else NULL
 }
