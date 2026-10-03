@@ -95,3 +95,11 @@ test_that("inside DataSuite a PDF made without Word or LibreOffice is printed by
   expect_match(printed, "report[.]html$")
   expect_true(file.exists(f))
 })
+
+test_that("the kernel's functions are found in tools:jovian (Jovian 0.2.6 and later), dot-named", {
+  env <- attach(NULL, name = "tools:jovian", warn.conflicts = FALSE)
+  withr::defer(detach("tools:jovian", character.only = TRUE))
+  assign(".elara.host_ask", function(...) "asked", envir = env)
+  expect_equal(.ds_hera("host_ask")(), "asked")
+  expect_null(.ds_hera("host_notify"))
+})

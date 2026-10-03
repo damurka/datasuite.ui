@@ -5,7 +5,11 @@
   under `@/countdown` as before. `js/` keeps the Shiny glue (the AI bridge, spinners, tab switches, dialogs).
 * Charts and tables already on screen are drawn again in the new language when the language changes. The session's
   language now exists from the start (shiny.i18n made it on the first change, so what was drawn before the first change
-  never followed it), and `cd_plain_text()` uses it.
+  never followed it), and `cd_plain_text()` uses it. `i18n$t()` outside a reactive context (a module server's body
+  building a card) reads it without a dependency: with shiny.i18n's own reactive value it failed with "Operation not
+  allowed without an active reactive context".
+* Requests to DataSuite on Jovian's host channel find the kernel's `host_ask()` / `host_notify()` in Jovian 0.2.6's
+  layout too (`.elara.host_ask()` in `tools:jovian`), as well as in the `hera` namespace of earlier kernels.
 
 # datasuite.ui 0.4.2
 

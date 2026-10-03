@@ -121,6 +121,24 @@ cd_translations <- function(app_file = character(), extra = character()) {
   out
 }
 
+# The session's language as shiny.i18n keeps it (session$userData$shiny.i18n$lang, which update_lang() sets and
+# i18n$t() reads), made before update_lang() would make it. shiny.i18n's own is a plain reactiveVal: once it exists,
+# i18n$t() outside a reactive context -- a module server's body building a card -- fails with "Operation not allowed
+# without an active reactive context". This one reads the value without a dependency there, and with one inside a
+# chart or a table, so those still draw again when the language changes.
+.cd_session_language_init <- function(session, language) {
+  if (inherits(session, "session_proxy")) session <- session$rootScope()
+  if (!is.null(session$userData$shiny.i18n$lang)) return(invisible())
+  value <- shiny::reactiveVal(language)
+  lang <- function(x) {
+    if (!missing(x)) return(value(x))
+    tryCatch(value(), error = function(e) shiny::isolate(value()))
+  }
+  if (is.null(session$userData$shiny.i18n)) session$userData$shiny.i18n <- list()
+  session$userData$shiny.i18n$lang <- lang
+  invisible()
+}
+
 # The session's language (shiny.i18n's, set by update_lang()), or NULL outside a session or before it has one
 .cd_session_language <- function(session = shiny::getDefaultReactiveDomain()) {
   if (is.null(session)) return(NULL)

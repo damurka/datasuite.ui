@@ -1,25 +1,34 @@
 # Requests to DataSuite: what an app asks of the application running it (open the chat, print a page, install
 # packages). Two ways, the same requests (docs/HOST-REQUESTS.md):
 #   * Jovian's host channel, when DataSuite says it answers it (it starts the app with CDSUITE_HOST_UI=1) and the app
-#     runs in a Jovian R kernel (Elara, with the hera package): hera::host_notify() / hera::host_ask(), method
-#     "datasuite.<action>". host_ask() waits for DataSuite's answer while the app runs, with no file to watch.
+#     runs in a Jovian R kernel (Elara): its host_notify() / host_ask(), method "datasuite.<action>". host_ask() waits
+#     for DataSuite's answer while the app runs, with no file to watch.
 #   * Otherwise, as before: one line on the R session's output, `DATASUITE_HOST_REQUEST <json>`, which DataSuite reads
 #     (message() goes to stderr, which is not buffered); an answer comes back in a `done` file named in the request.
-# hera is not on CRAN and is not a dependency: it is there in Jovian's kernel, so it is looked up when it is used.
+# The kernel's R code is not a dependency: it is there in Jovian's kernel, so it is looked up when it is used --
+# `.elara.host_ask()` in "tools:jovian" (Jovian 0.2.6 and later, every name dot-named), else hera's namespace
+# (`hera::host_ask()`, Jovian 0.2.3 to 0.2.5).
 
-# Whether DataSuite answers on Jovian's host channel: it said so, and the app runs in a Jovian kernel whose hera has
-# the channel (Jovian 0.2.3 and later)
+# Whether DataSuite answers on Jovian's host channel: it said so, and the app runs in a Jovian kernel that has it
 .ds_host_channel <- function() {
-  if (!identical(Sys.getenv("CDSUITE_HOST_UI"), "1") || !requireNamespace(.ds_hera_package, quietly = TRUE)) return(FALSE)
-  if (!all(c("host_notify", "host_ask", "is_elara") %in% getNamespaceExports(.ds_hera_package))) return(FALSE)
-  isTRUE(tryCatch(.ds_hera("is_elara")(), error = function(e) FALSE))
+  if (!identical(Sys.getenv("CDSUITE_HOST_UI"), "1")) return(FALSE)
+  is_elara <- .ds_hera("is_elara")
+  if (is.null(is_elara) || is.null(.ds_hera("host_notify")) || is.null(.ds_hera("host_ask"))) return(FALSE)
+  isTRUE(tryCatch(is_elara(), error = function(e) FALSE))
 }
 
-# hera, named through a variable: it is not a dependency (R CMD check looks for packages named in requireNamespace())
+# hera's namespace, named through a variable: it is not a dependency (R CMD check looks for packages named in
+# requireNamespace())
 .ds_hera_package <- "hera"
 
-# One of hera's functions
-.ds_hera <- function(name) getExportedValue(.ds_hera_package, name)
+# One of the kernel's functions (`host_ask`, `host_notify`, `is_elara`), or NULL when the session has none
+.ds_hera <- function(name) {
+  if ("tools:jovian" %in% search()) {
+    return(get0(paste0(".elara.", name), envir = as.environment("tools:jovian"), mode = "function", inherits = FALSE))
+  }
+  if (!requireNamespace(.ds_hera_package, quietly = TRUE) || !name %in% getNamespaceExports(.ds_hera_package)) return(NULL)
+  getExportedValue(.ds_hera_package, name)
+}
 
 #' Ask DataSuite for something
 #'
