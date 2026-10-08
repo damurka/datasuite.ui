@@ -1,3 +1,9 @@
+# datasuite.ui 0.4.4
+
+* The Ask AI button's hint is its text. Hovering it showed the markup around it
+  (`<span class="i18n" data-key="lbl_ask_ai_hint">Ask DataSuite's AI about this</span>`): the hint is an attribute,
+  and was given what `i18n$t()` returns for text to be translated in place.
+
 # datasuite.ui 0.4.3
 
 * The React components (sidebar, header, inputs, chips, wizard, chart options...) now come from `@quire/components`

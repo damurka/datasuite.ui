@@ -31,7 +31,8 @@ cd_ask_ai_button <- function(i18n = cd_i18n()) {
   in_datasuite <- .cd_in_datasuite()
   tags$button(
     type = "button", class = "cd-card__askai",
-    title = i18n$t(if (in_datasuite) "lbl_ask_ai_hint" else "lbl_ask_ai_unavailable"),
+    # plain text: i18n$t() gives a <span> to translate in place, which an attribute would show as it is written
+    title = cd_plain_text(i18n, if (in_datasuite) "lbl_ask_ai_hint" else "lbl_ask_ai_unavailable"),
     disabled = if (!in_datasuite) NA,
     tagList(
       tags$svg(
