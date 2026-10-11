@@ -9,11 +9,19 @@
 # `report`: the page's standard report (one the app registered, see report_register()), started in the report builder by the page's
 #   "Generate report" button; NULL when the page has none. The button is shown only in an app with the Reports page.
 # `server_args`: extra arguments after (id, cache, i18n). `active = FALSE`: the server takes no `active` argument.
+# `lazy = FALSE`: the server is started with the session, not when the page is first opened: for a page whose part
+#   of the browser asks its server things as soon as the app loads (the Reports page is one without being told).
 cd_page_def <- function(id, ui, server, title, section, subtitle, help = NULL, denominator = FALSE, report = NULL,
-                        server_args = list(), active = TRUE) {
+                        server_args = list(), active = TRUE, lazy = TRUE) {
   list(id = id, ui = ui, server = server, title = title, section = section, subtitle = subtitle, help = help,
-       denominator = denominator, report = report, server_args = server_args, active = active)
+       denominator = denominator, report = report, server_args = server_args, active = active, lazy = lazy)
 }
+
+# Is this page's server started with the session? The Reports page's is: the report builder is in the page from the
+# start and asks its host what it offers (the kinds of chart, the themes, the dataset's reports, the standard
+# reports) as soon as the app loads. A message to a server not started yet is lost, all but the last: started when
+# the page was opened, the server answered one of ten, and the page listed no reports (datasuite.ui 0.5.0, 0.5.1).
+.cd_page_eager <- function(p) isFALSE(p$lazy) || identical(p$server, reports_server)
 
 cd_use_pages <- function(pages) {
   assign("pages", stats::setNames(pages, vapply(pages, function(p) p$id, character(1))), envir = .cd_state)
@@ -78,6 +86,7 @@ cd_pages_server <- function(pages, cache, i18n, page_is, header_extra = NULL, cu
   if (is.null(current) || !isTRUE(getOption("datasuite.ui.lazy_pages", TRUE))) {
     for (id in ids) start(id)
   } else {
+    for (p in pages) if (.cd_page_eager(p)) start(p$id)
     # before anything else that follows the page on screen, so the page's own observers see this same change
     observe(start(current()), priority = 1000)
   }

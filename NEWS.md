@@ -1,3 +1,12 @@
+# datasuite.ui 0.5.2
+
+* The Reports page lists the dataset's reports and the standard reports again, and the builder has its kinds of
+  chart, its themes, years and regions. Since 0.5.0 a page's server is started when the page is first opened, but
+  the report builder asks its server what it offers as soon as the app loads: all but the last of those messages
+  were lost, so the page said "No reports yet" over a dataset that has reports, and often showed no standard
+  reports. The Reports page's server is started with the session.
+* `cd_page_def(lazy = FALSE)` starts any other page's server with the session.
+
 # datasuite.ui 0.5.1
 
 * A chart with a colour or fill scale that has no legend (`scale_colour_identity()`, `guide = "none"`) is drawn. The
