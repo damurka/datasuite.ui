@@ -6,6 +6,17 @@
 # their names stay readable, and the chart grows taller to give each one room.
 MANY_CATEGORIES <- 12
 ROW_HEIGHT_PX <- 26
+# A chart of panels (one a region) grows with its rows of panels once it has more than two: in the 400 pixels of a
+# plain chart, the 7 rows of 47 regions were 40 pixels each.
+MANY_PANEL_ROWS <- 2
+PANEL_ROW_PX <- 150
+
+# The rows of panels of a faceted plot (1 for a plain one)
+cd_chart_panel_rows <- function(p) {
+  if (!inherits(p, "ggplot") || inherits(p$facet, "FacetNull")) return(1L)
+  rows <- tryCatch(.ds_built(p)$layout$layout$ROW, error = function(e) NULL)
+  if (length(rows)) as.integer(max(rows)) else 1L
+}
 
 # The number of categories on each axis of the plot as data (0 for a continuous axis)
 cd_chart_axes <- function(p) {
@@ -23,7 +34,7 @@ cd_chart_axes <- function(p) {
 #   result$auto:    TRUE when `flip` was not chosen by the user
 #   result$rows:    categories down the side once drawn (for the height)
 cd_chart_layout <- function(p, flip = NULL) {
-  default <- list(flip = NULL, flipped = FALSE, auto = is.null(flip), rows = 0L, height = 400)
+  default <- list(flip = NULL, flipped = FALSE, auto = is.null(flip), rows = 0L, panel_rows = 1L, height = 400)
   if (!inherits(p, "ggplot")) return(default)
 
   axes <- tryCatch(cd_chart_axes(p), error = function(e) NULL)
@@ -36,8 +47,15 @@ cd_chart_layout <- function(p, flip = NULL) {
 
   flipped <- if (is.null(apply)) already_flipped else apply
   rows <- if (flipped) axes$x else axes$y
-  height <- if (rows > MANY_CATEGORIES) rows * ROW_HEIGHT_PX + 170 else 400
-  list(flip = apply, flipped = flipped, auto = auto, rows = rows, height = height)
+  panel_rows <- cd_chart_panel_rows(p)
+  height <- if (rows > MANY_CATEGORIES) {
+    rows * ROW_HEIGHT_PX + 170
+  } else if (panel_rows > MANY_PANEL_ROWS) {
+    panel_rows * PANEL_ROW_PX + 130
+  } else {
+    400
+  }
+  list(flip = apply, flipped = flipped, auto = auto, rows = rows, panel_rows = panel_rows, height = height)
 }
 
 # The chart's own text, keyed like the chart options, used as placeholders: an empty field means "as drawn".

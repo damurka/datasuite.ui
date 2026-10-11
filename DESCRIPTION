@@ -1,6 +1,6 @@
 Package: datasuite.ui
 Title: Shiny Interface, Chart Options and Report Builder for DataSuite Apps
-Version: 0.5.0
+Version: 0.5.1
 Authors@R: c(
       person("David", "Kariuki", , "hello@damurka.com", role = c("aut", "cre"),
              comment = c(ORCID = "0009-0003-6159-1107")),
@@ -61,4 +61,4 @@ Suggests:
     zip (>= 3.0.0)
 Config/datasuite/onDemand: chromote, pdftools
 Config/testthat/edition: 3
-RoxygenNote: 7.3.2
+Config/roxygen2/version: 8.1.0

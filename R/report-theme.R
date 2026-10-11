@@ -174,7 +174,7 @@ report_page <- function(design = report_default_design()) {
   built <- tryCatch(.ds_built(p), error = function(e) NULL)
   if (is.null(built)) return(NULL)
   for (scale in built$plot$scales$scales) {
-    if (!any(c("colour", "fill") %in% scale$aesthetics) || !isTRUE(scale$is_discrete())) next
+    if (!.ds_legend_scale(scale)) next
     limits <- scale$get_limits()
     limits <- as.character(limits[!is.na(limits)])
     if (!length(limits) || length(limits) > 12) return(NULL)

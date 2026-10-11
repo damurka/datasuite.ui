@@ -76,3 +76,48 @@ test_that("every font a chart's text is drawn in is found: the theme's, an eleme
   expect_true("Corbel" %in% .rb_plot_families(p + ggplot2::theme_minimal(base_family = "Corbel")))
   expect_true("Calibri" %in% .rb_plot_families(p + ggplot2::geom_text(ggplot2::aes(label = value), family = "Calibri")))
 })
+
+test_that("a scale without a legend is not listed, recoloured or given a report's palette", {
+  # the numbers on a heat map's tiles, each in the colour that reads on its tile
+  p <- ggplot2::ggplot(mtcars, ggplot2::aes(wt, mpg, colour = ifelse(cyl > 4, "grey10", "white"))) +
+    ggplot2::geom_point() + ggplot2::scale_colour_identity()
+  entries <- cd_chart_entries(p)   # was: subscript out of bounds, and the chart was not drawn
+  expect_length(entries$legend, 0)
+  recoloured <- apply_chart_options(p, cd_chart_options(colors = c(grey10 = "#FF0000")))
+  expect_setequal(unique(ggplot2::ggplot_build(recoloured)$data[[1]]$colour), c("grey10", "white"))
+  expect_null(.rb_palette_options(p, list(apply_palette = TRUE, palette = c("#111111", "#222222"))))
+
+  # a legend is still listed, with a label for each entry
+  q <- ggplot2::ggplot(mtcars, ggplot2::aes(wt, mpg, colour = factor(cyl))) + ggplot2::geom_point()
+  expect_identical(vapply(cd_chart_entries(q)$legend, function(e) e$shown, character(1)), c("4", "6", "8"))
+  expect_identical(.ds_scale_labels(list(get_labels = function(l) character()), c("a", "b")), c("a", "b"))
+})
+
+test_that("a chart of many panels is given the height its rows of panels need", {
+  data <- data.frame(region = rep(sprintf("Region %02d", 1:47), each = 3), year = rep(2021:2023, 47), value = 1)
+  bars <- ggplot2::ggplot(data, ggplot2::aes(factor(year), value)) + ggplot2::geom_col()
+  many <- bars + ggplot2::facet_wrap(~region)
+  expect_identical(cd_chart_panel_rows(many), 7L)
+  expect_identical(cd_chart_layout(many)$height, 7 * PANEL_ROW_PX + 130)
+  # a plain chart, and one with a row or two of panels, are as tall as they were
+  expect_identical(cd_chart_layout(bars)$height, 400)
+  few <- ggplot2::ggplot(data[data$region %in% sprintf("Region %02d", 1:6), ], ggplot2::aes(factor(year), value)) +
+    ggplot2::geom_col() + ggplot2::facet_wrap(~region)
+  expect_identical(cd_chart_panel_rows(few), 2L)
+  expect_identical(cd_chart_layout(few)$height, 400)
+})
+
+test_that("a chart is drawn at the client's height only while its card is expanded", {
+  height <- function(expanded, client) {
+    session <- list(rootScope = function() list(input = list(`page-plot__expanded` = expanded)))
+    testthat::local_mocked_bindings(
+      getCurrentOutputInfo = function(...) list(name = "page-plot", height = function() client),
+      getDefaultReactiveDomain = function() session, .package = "shiny")
+    cd_plot_client_height(400)
+  }
+  # not expanded: the output is as tall as its last picture, which is not a height anybody asked for
+  expect_identical(height(NULL, 1300), 400)
+  expect_identical(height(FALSE, 1300), 400)
+  expect_identical(height(TRUE, 900), 900)
+  expect_identical(height(TRUE, 250), 400)
+})

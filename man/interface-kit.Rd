@@ -137,6 +137,9 @@
 \alias{cd_use_pages}
 \alias{cd_wizard_steps}
 \alias{MANY_CATEGORIES}
+\alias{MANY_PANEL_ROWS}
+\alias{PANEL_ROW_PX}
+\alias{cd_chart_panel_rows}
 \alias{print.cd_chart_options}
 \alias{reports_server}
 \alias{reports_ui}

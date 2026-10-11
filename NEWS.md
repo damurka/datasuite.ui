@@ -1,3 +1,19 @@
+# datasuite.ui 0.5.1
+
+* A chart with a colour or fill scale that has no legend (`scale_colour_identity()`, `guide = "none"`) is drawn. The
+  customize panel lists a chart's legend entries before the chart is drawn, such a scale gives no labels, and the
+  chart showed "subscript out of bounds" in place of itself (the regional continuum heat map of cd2030.core 1.4.0).
+  A scale without a legend is no longer treated as one: it is not listed, a `colors` option does not recolour it and
+  a report's palette is not put on it.
+* A chart that had been tall becomes small again. A chart's height was the taller of the height it needs and the
+  height of its output, which is as tall as the picture last drawn in it: a heat map of every indicator, then one
+  indicator, kept the height of the first. The client's height is now used only while the card is expanded, which
+  the expand button reports (`<output id>__expanded`).
+* A chart of many panels (one a region) is given the height its rows of panels need, once it has more than two rows:
+  the 7 rows of 47 regions were drawn in the 400 pixels of a plain chart.
+* `validate(need(..., "a message"))` in a chart's function shows the message in the chart's place, in grey. It was
+  taken for "not ready yet" and the loader stayed for ever.
+
 # datasuite.ui 0.5.0
 
 * An app starts a page the first time it is opened, not all of them when the session begins. A 31-page app did not

@@ -10,6 +10,12 @@
 # anything taller, so every page's normal (non-expanded) look is exactly what it was before this existed.
 cd_plot_client_height <- function(fallback) {
   info <- shiny::getCurrentOutputInfo()
+  # Only while the card is expanded (ExpandButton.tsx says so, in the input "<output id>__expanded"). A chart's
+  # output is as tall as the picture last drawn in it, so the client's height was also the chart's own previous
+  # height: a chart that had been tall (a heat map of every indicator) stayed tall when it became a small one.
+  session <- shiny::getDefaultReactiveDomain()
+  expanded <- tryCatch(isTRUE(session$rootScope()$input[[paste0(info$name, "__expanded")]]), error = function(e) FALSE)
+  if (!expanded) return(fallback)
   client_height <- if (is.function(info$height)) info$height() else info$height
   if (is.numeric(client_height) && length(client_height) == 1 && client_height > fallback) client_height else fallback
 }
@@ -40,7 +46,10 @@ cd_render_plot <- function(expr, height = function() cd_plot_client_height(400))
     # been left (pages gate their outputs on `active`). That is "not yet", not "no data": passing it on as the
     # silent error it is lets the client keep showing the loader, where the branch below used to draw a gray
     # "No data available" that then flashed up every time a page was left and came back to.
-    if (inherits(check_data, "shiny.silent.error")) req(FALSE)
+    # validate(need(..., "a message")) is not that: it has something to tell the user ("Select an indicator"), and
+    # is written in the chart's place, in grey. It was taken for "not yet" too, and the loader stayed for ever.
+    guidance <- inherits(check_data, "validation") && nzchar(.ds_clean_error(check_data))
+    if (inherits(check_data, "shiny.silent.error") && !guidance) req(FALSE)
 
     # Check if data is empty or invalid
     if (inherits(check_data, "error") ||
@@ -55,7 +64,7 @@ cd_render_plot <- function(expr, height = function() cd_plot_client_height(400))
       } else {
         # validate()'s message is for the screen; anything else is a failure, logged too
         if (!inherits(check_data, "validation")) message('Error drawing a chart: ', text)
-        generate_error_plot(text, 'red')
+        generate_error_plot(text, if (guidance) 'gray35' else 'red')
       }
       return() # Return early, no progress or further processing
     }

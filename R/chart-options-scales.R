@@ -52,7 +52,8 @@
 
   for (built_scale in built$plot$scales$scales) {
     aesthetics <- intersect(built_scale$aesthetics, c("colour", "fill"))
-    if (!length(aesthetics) || !isTRUE(built_scale$is_discrete())) next
+    # only a legend's colours: a scale without one colours marks as the chart says (R/kit-chart-schema.R)
+    if (!length(aesthetics) || !.ds_legend_scale(built_scale)) next
 
     limits <- built_scale$get_limits()
     limits <- limits[!is.na(limits)]
