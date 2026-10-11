@@ -93,14 +93,21 @@ documents_card_ui <- function(id, i18n = cd_i18n()) {
 documents_card_server <- function(id, i18n = cd_i18n(), dir = ds_documents_dir) {
   moduleServer(id, function(input, output, session) {
     changed <- reactiveVal(0)
-    # files added outside the app (Explorer, the chat) show up too
-    listing <- reactivePoll(4000, session,
-      checkFunc = function() {
-        d <- dir()
-        if (is.null(d) || !dir.exists(d)) return("")
-        paste(list.files(d), collapse = "|")
-      },
-      valueFunc = function() ds_documents_list(dir()))
+    # Files added outside the app (Explorer, the chat) show up too: the folder is looked at every 4 seconds, but only
+    # while the card is on screen (a reactivePoll() here kept looking for the rest of the session once the page had
+    # been opened), and again at once when the page is come back to.
+    on_screen <- reactive(!isTRUE(session$clientData[[paste0("output_", session$ns("list"), "_hidden")]]))
+    folder <- reactiveVal("")
+    observe({
+      if (!on_screen()) return()
+      invalidateLater(4000, session)
+      d <- dir()
+      folder(if (is.null(d) || !dir.exists(d)) "" else paste(list.files(d), collapse = "|"))
+    })
+    listing <- reactive({
+      folder()
+      ds_documents_list(dir())
+    })
 
     observeEvent(input$add, {
       files <- input$add

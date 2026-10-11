@@ -69,7 +69,7 @@ app_frame <- function(app_name, app_version, theme, nav_sections, registry, i18n
       if (!input$tabs %in% open_tabs && !isTRUE(data_ready())) cd_navigate_to(session, start_tab)
     }, ignoreInit = TRUE)
 
-    # Every page server is created at startup. A page's work waits until it is opened with data loaded, and stays done
+    # A page's server is created the first time it is opened (see cd_pages_server()). Its work waits until it is opened with data loaded, and stays done
     # when the user goes elsewhere (a new dataset starts every page over): pass `active = page_is("<tab name>")`.
     page_is <- function(tab) {
       force(tab)
@@ -104,9 +104,9 @@ app_frame <- function(app_name, app_version, theme, nav_sections, registry, i18n
       session$sendCustomMessage("reinit-tooltips", TRUE)
     })
 
-    cd_pages_server(registry, cache, i18n, page_is, header_extra = page_header_extra)
+    cd_pages_server(registry, cache, i18n, page_is, header_extra = page_header_extra, current = reactive(input$tabs))
 
-    # DataSuite's chat: where the user is, and requests from the AI (after the pages, so every chart is registered)
+    # DataSuite's chat: where the user is, and requests from the AI (a page's charts are registered when it starts)
     .ai_bridge_server(input, session, app = list(name = app_name, version = as.character(app_version)),
                       nav_sections = nav_sections, language = active_language, data_ready = data_ready,
                       analysis_ready = analysis_ready, open_tabs = open_tabs, ai_state = ai_state, ai_actions = ai_actions)

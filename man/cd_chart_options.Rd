@@ -115,8 +115,7 @@ cd_chart_options(
 )
 }
 \arguments{
-\item{...}{The names older plot methods used: \code{x_axis}, \code{x_label} (= \code{x_title}), \code{y_axis}, \code{y_label} (= \code{y_title}),
-\code{legend}, \code{fill_label} (= \code{legend_title}), \code{colours} (= \code{colors}).}
+\item{...}{\code{colours}, the other spelling of \code{colors}. Nothing else is accepted.}
 
 \item{title, subtitle, caption, tag}{Chart texts.}
 
@@ -263,7 +262,7 @@ is flipped.
 }
 \examples{
 cd_chart_options(title = "Coverage", legend_position = "bottom", text_scale = 1.2)
-cd_chart_options(x_axis = "Year", legend_labels = c(dhis2 = "Routine data"))
+cd_chart_options(x_title = "Year", legend_labels = c(dhis2 = "Routine data"))
 cd_chart_options(x_text_angle = 45, grid = "horizontal", grid_color = "grey90",
                  y_labels = "percent_points")
 

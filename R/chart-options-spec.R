@@ -29,11 +29,8 @@
 #' @export
 chart_option_fields <- function() .chart_option_fields()
 
-# Names some plot methods have always used for the same thing -> the option they mean
+# Another spelling of an option -> the option it means
 .chart_option_aliases <- c(
-  x_axis = "x_title", x_label = "x_title",
-  y_axis = "y_title", y_label = "y_title",
-  legend = "legend_title", fill_label = "legend_title",
   colours = "colors"
 )
 

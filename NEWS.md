@@ -1,3 +1,19 @@
+# datasuite.ui 0.5.0
+
+* An app starts a page the first time it is opened, not all of them when the session begins. A 31-page app did not
+  answer for 12 seconds after its page loaded: 3 seconds creating every page's server, 5 in the first pass over their
+  262 outputs, and 24 of the 30 outputs first drawn were on pages nobody had opened. It now answers in under 4. A
+  page's first opening takes up to a second longer; coming back to it costs nothing, as before. The AI's requests
+  start the page they need. `options(datasuite.ui.lazy_pages = FALSE)` starts every page at once, as before.
+* The documents card looks at its folder (for files added outside the app) only while it is on screen, and at once
+  when the page is come back to. It looked every 4 seconds for the rest of the session once the Reports page had
+  been opened.
+* A legend title given as a chart option (`legend_title`) is set on the aesthetics the chart draws a legend from.
+  On a chart with no fill it was also set on fill, and ggplot2 printed "Ignoring unknown labels: fill".
+* **Breaking:** `cd_chart_options()` no longer takes `x_axis`, `x_label`, `y_axis`, `y_label`, `legend` and
+  `fill_label`, the names cd2030.core's charts had for `x_title`, `y_title` and `legend_title` (cd2030.core 1.4.0
+  uses the option names). `colours` is still read as `colors`.
+
 # datasuite.ui 0.4.4
 
 * The Ask AI button's hint is its text. Hovering it showed the markup around it

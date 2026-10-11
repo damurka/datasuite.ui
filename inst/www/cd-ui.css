@@ -2652,8 +2652,8 @@ body.cd-theme-pooled {
 .cd-adj__pick--on { border-color: var(--cd-danger); background: var(--cd-danger-tint); color: var(--cd-danger); }
 .cd-adj__note { margin: 0; padding: 10px 12px; border-radius: 8px; background: var(--cd-warning-tint); color: var(--cd-warning-ink); font-size: 14px; line-height: 1.45; }
 
-/* The Data adjustment page under its editor (cd2030.core ui-page-1c_data_adjustment.R): the adjusted data's download
-   and the link to the changes; the Changes page's rules (ui-page-1c_data_adjustment_changes.R). */
+/* The Data adjustment page under its editor (cd2030.core page-data_adjustment.R): the adjusted data's download
+   and the link to the changes; the Changes page's rules (page-data_adjustment_changes.R). */
 .cd-adj-after { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; margin-top: 16px; }
 .cd-adj-after__link { font-size: 15px; font-weight: 600; color: var(--cd-primary-ink); }
 .cd-adj-rules { margin-bottom: 16px; padding: 14px 18px; border: 1px solid var(--cd-border); border-radius: 12px; background: var(--cd-surface); }

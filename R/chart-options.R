@@ -99,14 +99,13 @@
 #'   when the chart has that text at all; `NULL` keeps what the chart draws. An empty text (`title = ""`, `x_title = ""`,
 #'   `legend_title = ""`...) hides that element the same way.
 #'
-#' @param ... The names older plot methods used: `x_axis`, `x_label` (= `x_title`), `y_axis`, `y_label` (= `y_title`),
-#'   `legend`, `fill_label` (= `legend_title`), `colours` (= `colors`).
+#' @param ... `colours`, the other spelling of `colors`. Nothing else is accepted.
 #'
 #' @return An object of class `cd_chart_options` (a list of the fields that are set).
 #'
 #' @examples
 #' cd_chart_options(title = "Coverage", legend_position = "bottom", text_scale = 1.2)
-#' cd_chart_options(x_axis = "Year", legend_labels = c(dhis2 = "Routine data"))
+#' cd_chart_options(x_title = "Year", legend_labels = c(dhis2 = "Routine data"))
 #' cd_chart_options(x_text_angle = 45, grid = "horizontal", grid_color = "grey90",
 #'                  y_labels = "percent_points")
 #'

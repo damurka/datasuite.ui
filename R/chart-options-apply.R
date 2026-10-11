@@ -41,8 +41,13 @@ apply_chart_options <- function(p, options = NULL) {
   texts$x <- o$x_title
   texts$y <- o$y_title
   if (!is.null(o$legend_title)) {
-    present <- intersect(legend_aes, names(ggplot2::get_labs(p)))
-    for (key in if (length(present)) present else c("fill", "colour")) texts[[key]] <- o$legend_title
+    # the aesthetics this plot draws a legend from: those it has a label for, and those its layers map (a legend
+    # whose scale has no name has no label yet). A label that is NULL is not one: a theme helper may have written
+    # labs(fill = NULL) on a plot with no fill, and naming it makes ggplot2 say "Ignoring unknown labels".
+    labelled <- Filter(Negate(is.null), ggplot2::get_labs(p))
+    mapped <- unique(c(names(p$mapping), unlist(lapply(p$layers, function(layer) names(layer$mapping)))))
+    present <- intersect(legend_aes, c(names(labelled), mapped))
+    for (key in present) texts[[key]] <- o$legend_title
     # a scale given its own name (name = NULL hides the legend title) beats labs(), so name those too
     for (i in seq_along(p$scales$scales)) {
       if (any(p$scales$scales[[i]]$aesthetics %in% legend_aes)) p$scales$scales[[i]]$name <- o$legend_title

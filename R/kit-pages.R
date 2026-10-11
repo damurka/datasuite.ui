@@ -46,20 +46,57 @@ cd_pages_ui <- function(pages, i18n) {
   lapply(pages, function(page) cd_screen(tabName = page$id, page$ui(page$id, i18n)))
 }
 
-# Starts every page's server plus its header (help, report, notes) -- so a module never wires its own header.
+# Starts a page's server plus its header (help, report, notes) -- so a module never wires its own header -- the first
+# time the page is opened. Starting all of them when the session began kept a 31-page app deaf for 12 s (measured:
+# 3 s creating the servers, 5 s in the first flush over their 262 outputs, 24 of the 30 outputs drawn at startup on
+# pages nobody had opened). `options(datasuite.ui.lazy_pages = FALSE)` starts them all at once, as before.
 # `page_is(id)`: app.R's reactive "is this page open with data loaded".
 # `header_extra`: what the app adds to every page header's server (see cd_page_header_server()).
-cd_pages_server <- function(pages, cache, i18n, page_is, header_extra = NULL) {
-  for (page in pages) {
-    local({
-      p <- page
+# `current`: reactive, the id of the page on screen.
+cd_pages_server <- function(pages, cache, i18n, page_is, header_extra = NULL, current = NULL,
+                            session = getDefaultReactiveDomain()) {
+  ids <- vapply(pages, function(p) p$id, character(1))
+  started <- new.env(parent = emptyenv())
+  start <- function(id) {
+    if (!is.character(id) || length(id) != 1 || !id %in% ids || isTRUE(started[[id]])) return(invisible(FALSE))
+    started[[id]] <- TRUE
+    p <- pages[[match(id, ids)]]
+    # in the session's own domain and outside whatever reactive asked: an observer opening a page must not come to
+    # depend on what the page reads while it starts
+    withReactiveDomain(session, isolate({
       args <- c(list(p$id, cache, i18n), p$server_args, if (isTRUE(p$active)) list(active = page_is(p$id)))
       do.call(p$server, args)
       moduleServer(p$id, function(input, output, session) {
         cd_page_header_server("page", cache = cache, path = p$help[1], section = if (length(p$help) > 1) p$help[2],
                               i18n = i18n, key = p$report %||% p$id, extra = header_extra)
       })
-    })
+    }))
+    invisible(TRUE)
   }
+  # what needs a page that may not have been opened (the AI reading a chart elsewhere) starts it: cd_start_pages()
+  if (!is.null(session)) session$userData$cd_start_pages <- function(which = ids) for (id in intersect(which, ids)) start(id)
+  if (is.null(current) || !isTRUE(getOption("datasuite.ui.lazy_pages", TRUE))) {
+    for (id in ids) start(id)
+  } else {
+    # before anything else that follows the page on screen, so the page's own observers see this same change
+    observe(start(current()), priority = 1000)
+  }
+  invisible(NULL)
+}
+
+#' Start the servers of pages not opened yet
+#'
+#' An app starts a page's server the first time the page is opened (`cd_pages_server()`). What needs a page that may
+#' not have been opened (the AI reading a chart on another page) starts it with this. Nothing happens for a page
+#' already started, or in an app whose pages are all started with the session.
+#'
+#' @param session The Shiny session.
+#' @param which The ids of the pages to start; every page when `NULL`.
+#'
+#' @return `NULL`, invisibly.
+#' @export
+cd_start_pages <- function(session = getDefaultReactiveDomain(), which = NULL) {
+  f <- session$userData$cd_start_pages
+  if (is.function(f)) if (is.null(which)) f() else f(which)
   invisible(NULL)
 }

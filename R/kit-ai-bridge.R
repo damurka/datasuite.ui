@@ -217,6 +217,7 @@ ai_register_component <- function(session, output_id, type = c("chart", "table")
 
 # The components on `page`, as R knows them (nothing here computes their data).
 .ai_page_components <- function(session, page) {
+  cd_start_pages(session, page)
   registry <- .ai_components(session)
   entries <- Filter(function(x) identical(x$page, page), mget(sort(ls(registry)), envir = registry))
   lapply(unname(entries), function(x) {
@@ -288,6 +289,8 @@ ai_register_component <- function(session, output_id, type = c("chart", "table")
     id <- args$componentId
     if (!is.character(id) || length(id) != 1) stop("Say which component: componentId, from listComponents.", call. = FALSE)
     registry <- .ai_components(session)
+    # a chart of a page not opened yet is registered once its page has started
+    if (!exists(id, envir = registry, inherits = FALSE)) cd_start_pages(session)
     if (!exists(id, envir = registry, inherits = FALSE)) stop(sprintf("There is no component \"%s\"; listComponents gives the charts and tables on this page.", id), call. = FALSE)
     get(id, envir = registry, inherits = FALSE)
   }
